@@ -3,6 +3,11 @@ description:
 globs: 
 alwaysApply: true
 ---
+---
+description: 
+globs: 
+alwaysApply: true
+---
 # 🎨 高級感重視のデザインシステム
 
 ## デザイン原則
@@ -14,47 +19,396 @@ alwaysApply: true
 - **チープな素材禁止**: 低品質な画像・アイコン・フォントは一切使用禁止
 - **Lucideアイコン使用絶対禁止**: Heroicons、Phosphor Icons、カスタムSVGを使用
 
+### 🚨 チープなアイコンデザインの絶対禁止ルール（必須）
+
+#### 絶対禁止：角丸四角形アイコン
+**角丸四角形の背景色付きアイコンは絶対に使用禁止**
+- `w-12 h-12 bg-gradient-to-br rounded-xl` 等の角丸四角形アイコン
+- `w-14 h-14 bg-gradient-to-r rounded-xl` 等の数値表示アイコン
+- 色付き背景（グラデーション・単色問わず）の四角形アイコン
+- 中央に文字・記号を配置した四角形デザイン
+
+#### 絶対禁止：カテゴリータブの絵文字・カードデザイン
+**カテゴリータブには絵文字アイコンとカードデザインを絶対使用禁止**
+- 絵文字アイコン（☕ 🫖 🥐 🍰等）は絶対禁止
+- カードデザイン（bg-white rounded-2xl shadow-lg等）は絶対禁止
+- ホバー時のスケール効果（hover:scale-105等）は絶対禁止
+- 背景色・シャドウ・角丸の組み合わせは絶対禁止
+
+#### 推奨代替案：エレガントなテキスト統合デザイン
+```tsx
+// ❌ 絶対禁止：角丸四角形アイコンパターン
+<div className="w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 rounded-xl flex items-center justify-center mx-auto mb-4">
+  <div className="w-3 h-3 bg-white rounded-full"></div>
+</div>
+
+// ❌ 絶対禁止：カードデザインタブパターン
+<div className="bg-white rounded-2xl p-2 shadow-lg border border-gray-100">
+  <button className="px-6 py-3 rounded-xl bg-amber-600 text-white shadow-lg hover:scale-105">
+    <span className="text-lg">☕</span>
+    <span>コーヒー</span>
+  </button>
+</div>
+
+// ✅ 推奨：エレガントなテキスト統合デザイン
+<div className="inline-flex items-baseline space-x-2 mb-3">
+  <span className="text-3xl font-bold text-amber-600 group-hover:text-amber-700 transition-colors">2020</span>
+  <span className="text-sm text-amber-500 font-medium">年</span>
+</div>
+
+// ✅ 推奨：シンプルなタブデザイン（カテゴリー用）
+<div className="flex space-x-1">
+  <button className="px-6 py-3 font-semibold transition-all duration-300 border-b-2 text-amber-600 border-amber-600">
+    コーヒー
+  </button>
+  <button className="px-6 py-3 font-semibold transition-all duration-300 border-b-2 text-gray-600 border-transparent hover:text-amber-500 hover:border-amber-300">
+    ティー
+  </button>
+</div>
+
+// ✅ 推奨：SVGアイコンと文章の統合
+<div className="flex items-center space-x-3 text-gray-700">
+  <svg className="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+    <path d="M..." />
+  </svg>
+  <span className="font-medium">厳選豆使用</span>
+</div>
+```
+
+#### チープなアイコン実装チェックリスト
+```
+🚨 チープなアイコンの絶対確認項目：
+□ 角丸四角形（rounded-xl, rounded-lg等）の背景色付きアイコンが削除されているか
+□ w-12 h-12, w-14 h-14 等の固定サイズ四角形アイコンが削除されているか
+□ bg-gradient-to-r, bg-gradient-to-br 等の背景グラデーションアイコンが削除されているか
+□ 中央に文字・数値・記号を配置した四角形デザインが削除されているか
+□ エレガントなテキスト統合デザインに変更されているか
+□ SVGアイコンと文章の自然な統合が実装されているか
+□ 高級感を損なう安っぽいアイコンが一切残っていないか
+
+🚨 カテゴリータブの絶対確認項目：
+□ 絵文字アイコン（☕ 🫖 🥐 🍰等）が完全に削除されているか
+□ カードデザイン（bg-white rounded-2xl shadow-lg等）が削除されているか
+□ ホバー時のスケール効果（hover:scale-105等）が削除されているか
+□ シンプルな下線タブデザイン（border-b-2）が実装されているか
+□ アクティブ状態が適切な色（text-amber-600 border-amber-600）で表示されているか
+□ ホバー状態が自然な色変化（hover:text-amber-500）で実装されているか
+□ 背景・シャドウ・角丸の組み合わせが一切使用されていないか
+□ 全体的にミニマルで高級感のあるデザインになっているか
+```
+
+### 🏷️ カフェHP専用セクション見出しルール（必須）
+
+#### セクション見出しの英語化原則
+**主要セクションの見出しは英語で表記し、高級感・国際的な印象を演出する**
+
+#### 必須英語見出し一覧
+```tsx
+// 🚨 必須：セクション見出しの英語表記
+const SECTION_HEADINGS = {
+  about: "ABOUT US",           // ❌ 「私たちについて」
+  menu: "OUR MENU",           // ❌ 「メニュー」
+  location: "LOCATION",       // ❌ 「店舗情報」
+  contact: "CONTACT",         // ❌ 「お問い合わせ」
+  news: "NEWS",               // ❌ 「お知らせ」
+  gallery: "GALLERY",         // ❌ 「ギャラリー」
+  concept: "OUR CONCEPT",     // ❌ 「コンセプト」
+  access: "ACCESS"            // ❌ 「アクセス」
+} as const;
+```
+
+#### 見出しデザインの絶対ルール
+```tsx
+// ✅ 推奨：高級感のあるセクション見出しテンプレート（最新版）
+export const SectionHeading: React.FC<{ title: string }> = ({ title }) => (
+  <div className="text-center mb-16 animate-fade-in">
+    {/* 🚨 高級感のあるセクション見出しデザイン */}
+    <div className="relative inline-flex flex-col items-center mb-8">
+      {/* 装飾ライン（上） */}
+      <div className="w-16 h-px bg-gradient-to-r from-transparent via-amber-300 to-transparent mb-4"></div>
+      
+      {/* メイン見出し */}
+      <div className="relative">
+        <h3 className="text-sm font-semibold tracking-[0.2em] text-amber-800 uppercase mb-2 relative z-10">
+          {title}
+        </h3>
+        {/* 背景装飾 */}
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-50 to-transparent blur-sm opacity-70 scale-110"></div>
+      </div>
+      
+      {/* 装飾ライン（下） */}
+      <div className="w-24 h-px bg-gradient-to-r from-transparent via-amber-400 to-transparent mt-2"></div>
+      
+      {/* 装飾ドット */}
+      <div className="flex space-x-1 mt-3">
+        <div className="w-1 h-1 bg-amber-400 rounded-full"></div>
+        <div className="w-1.5 h-1.5 bg-amber-500 rounded-full"></div>
+        <div className="w-1 h-1 bg-amber-400 rounded-full"></div>
+      </div>
+    </div>
+    
+    {/* 以下、サブタイトル・説明文は日本語可 */}
+    <h2 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold text-gray-900 mb-6">
+      {/* サブタイトル（日本語） */}
+    </h2>
+  </div>
+);
+
+// ❌ 絶対禁止：シンプルな背景色付きパターン（旧デザイン）
+export const SectionHeadingNG: React.FC = () => (
+  <div className="inline-block px-4 py-2 text-amber-800 font-semibold text-sm mb-4">
+    {/* シンプルすぎる見出しは禁止 */}
+  </div>
+);
+
+// ❌ 絶対禁止：背景色・グラデーション背景パターン
+export const SectionHeadingNG2: React.FC = () => (
+  <div className="inline-block px-8 py-3 bg-gradient-to-r from-amber-100 to-orange-100 rounded-full">
+    {/* 背景色・グラデーション背景は絶対禁止 */}
+  </div>
+);
+```
+
+#### セクション見出し実装チェックリスト（最新版）
+```
+🚨 高級感のあるセクション見出しの必須確認項目：
+□ 主要セクション見出しが英語表記になっているか（About Us, Our Menu, Location, Contact等）
+□ 装飾ライン（上）が w-16 h-px bg-gradient-to-r で実装されているか
+□ メイン見出しが text-sm font-semibold tracking-[0.2em] text-amber-800 uppercase で実装されているか
+□ 背景装飾（blur-sm opacity-70 scale-110）が適切に配置されているか
+□ 装飾ライン（下）が w-24 h-px bg-gradient-to-r で実装されているか
+□ 装飾ドット（3個のドット）が適切に配置されているか
+□ relative inline-flex flex-col items-center の構造が正しく実装されているか
+□ サブタイトル・説明文は日本語で適切に記載されているか
+□ 全体的に高級感・洗練された印象を与えているか
+□ 旧デザイン（シンプルなinline-block px-4 py-2）から更新されているか
+```
+
 ## 🖼️ FV（ファーストビュー）設計ルール（必須）
 
 ### FVの基本原則
 - **画面領域の完全活用**: ビューポートの100vh（100%の高さ）を必ず使用
+- **FV画像の絶対配置**: カフェ関連の高品質画像を100vh全体に必ず配置
+- **文字配置**: 見出し・テキストは中央ではなく中央より左側に配置（左寄せまたは左中央）
+- **シンプル・ミニマル**: 不要な装飾要素・色付きアイコンは一切排除
 - **インパクト重視**: 訪問者の注意を即座に引く強力なビジュアル
 - **メッセージの明確性**: 3秒以内にサイトの目的が理解できる構成
 - **高級感の演出**: プレミアムブランドにふさわしい洗練されたデザイン
 - **アクション誘導**: 明確なCTAボタンの配置
 
-### FV画像配置ルール
+### 🚨 FV画像配置ルール（絶対遵守）
 
-#### 1. 画像サイズ・品質要件
+#### ⚡ 100vh画像配置の絶対実装ルール
+**FVには必ずカフェ関連の高品質画像を100vh全体に配置すること**
+- 画像なしのFVは絶対禁止
+- 画像が100vh未満の配置は絶対禁止
+- 背景グラデーションのみは絶対禁止
+
+#### 🚨 FVクリーンデザインの絶対ルール
+**FVは極限までシンプル・ミニマルにすること**
+- 色付きアイコン（緑・青・紫・オレンジ等）は絶対禁止
+- 営業時間・営業中インジケーターは絶対禁止
+- ロケーション情報（原宿・表参道等）は絶対禁止
+- スクロールアイコンは絶対禁止
+- 特徴アイコン（WiFi・電源・厳選豆等）は絶対禁止
+- 不要な装飾要素は一切排除
+
+#### 1. 🎯 完璧なFVテンプレート（一発生成用・コピペ必須）
+```tsx
+// 🚨 このテンプレートをそのまま使用すれば理想的なFVが完成します
+import React from 'react';
+import { Button } from '@/components/ui/Button';
+
+export const HeroSection: React.FC = () => {
+  return (
+    <section 
+      id="home" 
+      className="
+        w-screen h-screen 
+        min-h-screen
+        relative overflow-hidden
+        supports-[height:100dvh]:h-[100dvh]
+        supports-[height:100dvh]:min-h-[100dvh]
+      "
+    >
+      {/* 🚨 必須：背景画像を100vh全体に絶対配置 */}
+      <div className="absolute inset-0 z-0">
+        <picture>
+          <source 
+            media="(min-width: 1920px)" 
+            srcSet="https://images.unsplash.com/photo-1554118811-1e0d58224f24?ixlib=rb-4.0.3&auto=format&fit=crop&w=2560&q=80" 
+          />
+          <source 
+            media="(min-width: 1024px)" 
+            srcSet="https://images.unsplash.com/photo-1554118811-1e0d58224f24?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" 
+          />
+          <source 
+            media="(min-width: 768px)" 
+            srcSet="https://images.unsplash.com/photo-1554118811-1e0d58224f24?ixlib=rb-4.0.3&auto=format&fit=crop&w=1024&q=80" 
+          />
+          <img 
+            src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?ixlib=rb-4.0.3&auto=format&fit=crop&w=768&q=80"
+            alt="Café Lumière - 心地よいカフェ空間"
+            className="w-full h-full object-cover"
+            loading="eager"
+            decoding="async"
+          />
+        </picture>
+        
+        {/* オーバーレイ（読みやすさ確保） */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
+      </div>
+      
+      {/* 🚨 FV文字配置：中央より左側（左中央配置） */}
+      <div className="relative z-10 w-full h-full">
+        <div className="h-full flex items-center justify-start pl-8 md:pl-16 lg:pl-24">
+          <div className="text-left max-w-4xl space-y-8">
+            {/* シンプルなブランドバッジ */}
+            <div className="inline-block px-6 py-3 bg-white/10 backdrop-blur-sm rounded-full text-white font-semibold animate-fade-in">
+              Café Lumière - Since 2020
+            </div>
+            
+            {/* メインタイトル */}
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-heading font-bold text-white leading-tight animate-fade-in animation-delay-100">
+              <span className="block mb-4">心地よい空間で</span>
+              <span className="bg-gradient-to-r from-amber-300 via-orange-300 to-yellow-300 bg-clip-text text-transparent">
+                特別なひととき
+              </span>
+            </h1>
+            
+            {/* サブタイトル */}
+            <p className="text-xl md:text-2xl lg:text-3xl text-white/90 max-w-3xl animate-fade-in animation-delay-200 leading-relaxed">
+              厳選された豆から淹れる最高の一杯と、<br />
+              温かみのある空間があなたをお待ちしています
+            </p>
+            
+            {/* CTAボタン */}
+            <div className="flex flex-col sm:flex-row gap-6 animate-fade-in animation-delay-300">
+              <Button variant="luxury" size="xl" className="min-w-[200px] bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700">
+                メニューを見る
+              </Button>
+              <Button variant="outline" size="xl" className="min-w-[200px] text-white border-white hover:bg-white hover:text-gray-900">
+                店舗情報
+              </Button>
+            </div>
+          </div>
+        </div>
+        
+        {/* 🚨 高級感のある縦線スクロールアニメーション（右下） */}
+        <div className="absolute bottom-8 right-8 flex flex-col items-center space-y-2 animate-fade-in animation-delay-500">
+          <span className="text-white/70 text-xs font-medium uppercase tracking-wider rotate-90 origin-center mb-4">
+            Scroll
+          </span>
+          <div className="w-px h-16 bg-gradient-to-b from-transparent via-white/60 to-transparent relative">
+            <div className="absolute top-0 w-px h-4 bg-white animate-scroll-line"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+```
+
+#### 2. 画像サイズ・品質要件（強化版）
 ```css
-/* FV画像の必須要件 */
+/* 🚨 FV画像の絶対必須要件 */
+.fv-image-container {
+  /* 画面全体を完全にカバー（絶対指定） */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw !important;
+  height: 100vh !important;
+  min-height: 100vh !important;
+  z-index: 0;
+  overflow: hidden;
+}
+
 .fv-image {
-  /* 画面全体をカバー */
-  width: 100vw;
-  height: 100vh;
+  /* 画面全体をカバー（絶対指定） */
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100vh !important;
   
   /* 高品質表示 */
-  object-fit: cover;
+  object-fit: cover !important;
   object-position: center center;
+  
+  /* パフォーマンス最適化 */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
   
   /* WebP推奨、フォールバック対応 */
   /* 最小解像度: 1920x1080px */
   /* 推奨解像度: 2560x1440px以上 */
 }
 
-/* レスポンシブ画像対応 */
+/* iOS Safari対応（絶対必須） */
+@supports (height: 100dvh) {
+  .fv-image-container {
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+  }
+  
+  .fv-image {
+    height: 100% !important;
+    min-height: 100dvh !important;
+  }
+}
+
+/* レスポンシブ画像対応（強化版） */
 .fv-image-responsive {
-  background-image: 
-    image-set(
-      url('/images/hero/hero-desktop-2560.webp') 2560w,
-      url('/images/hero/hero-desktop-1920.webp') 1920w,
-      url('/images/hero/hero-tablet-1024.webp') 1024w,
-      url('/images/hero/hero-mobile-768.webp') 768w
-    );
-  background-size: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw !important;
+  height: 100vh !important;
+  min-height: 100vh !important;
+  background-size: cover !important;
   background-position: center center;
   background-repeat: no-repeat;
+  background-attachment: fixed; /* パララックス効果 */
 }
+```
+
+#### 3. 実装チェックリスト（必須確認）
+```
+🚨 FV画像配置の絶対確認項目：
+□ section要素が w-screen h-screen min-h-screen クラスを持っているか
+□ 背景画像コンテナが absolute inset-0 z-0 クラスを持っているか
+□ img要素が w-full h-full object-cover クラスを持っているか
+□ picture要素で複数解像度に対応しているか
+□ loading="eager" が設定されているか（FV画像は即座に読み込み）
+□ alt属性が適切に設定されているか
+□ オーバーレイが適切に配置されているか
+□ iOS Safari対応（100dvh）が実装されているか
+□ カフェ関連の高品質画像が使用されているか
+□ 画像が実際に100vh全体に表示されているか（ブラウザで目視確認必須）
+
+🚨 FVクリーンデザインの絶対確認項目：
+□ 色付きアイコン（緑・青・紫・オレンジ等）が完全に削除されているか
+□ 営業時間インジケーターが削除されているか
+□ ロケーション情報（原宿・表参道等）が削除されているか
+□ 特徴アイコンセクション（厳選豆・WiFi等）が削除されているか
+□ 不要な装飾要素が一切残っていないか
+□ シンプルで高級感のあるデザインになっているか
+
+🚨 FVスクロールアニメーションの絶対確認項目：
+□ 高級感のある縦線スクロールアニメーションが実装されているか
+□ 丸いスクロールアイコンが削除されているか
+□ カラフルなスクロール要素が削除されているか
+□ 矢印・チェブロン等のアイコンが削除されているか
+□ 位置が右下（bottom-8 right-8）に配置されているか
+□ animate-scroll-line クラスが適用されているか
+
+🚨 チープなアイコン・ボタンの絶対確認項目：
+□ 丸いフローティングボタンが完全に削除されているか
+□ 絵文字アイコンボタン（⬆️、📧等）が削除されているか
+□ animate-bounce アニメーションが削除されているか
+□ カラフルな円形SNSボタンが削除されているか
+□ チープなオレンジグラデーションが削除されているか
+□ 固定位置の装飾的ボタンが削除されているか
+□ 全体的に高級感のあるデザインになっているか
 ```
 
 ### 🎯 画面領域活用の鉄則
@@ -400,6 +754,124 @@ const TextHierarchyTemplate = {
 ```
 
 #### 3. 配置パターンの使い分け
+
+#### 🚨 FV文字配置の絶対ルール（カフェHP専用）
+**FVの見出し・テキストは必ず「中央より左側」に配置すること**
+- 完全左寄せ（text-left）または左中央（justify-start items-center）
+- 中央配置（text-center）は絶対禁止
+- 右寄せ（text-right）は絶対禁止
+
+#### 🚨 スクロールアニメーションの絶対ルール
+**スクロールアニメーションは高級感のある縦線タイプのみ許可**
+- 縦線のシンプルなアニメーション（animate-scroll-line）のみ使用
+- 丸いスクロールアイコンは絶対禁止
+- カラフルなスクロールアイコンは絶対禁止
+- 矢印・チェブロン等のアイコンは絶対禁止
+- 位置は右下（bottom-8 right-8）固定
+
+#### 🚨 チープなアイコン・ボタンの絶対禁止ルール
+**チープなアイコン・ボタンは一切使用禁止**
+- 丸いフローティングボタンは絶対禁止（特にオレンジ色）
+- 絵文字アイコンボタンは絶対禁止（⬆️、📧、🏆等）
+- animate-bounce の安っぽいアニメーションは絶対禁止
+- カラフルな円形SNSボタンは絶対禁止
+- チープなグラデーション（from-amber-600 to-orange-600等）は絶対禁止
+- 固定位置の装飾的ボタンは絶対禁止
+
+#### 🚨 Footerセクションの絶対禁止要素（必須）
+**Footerに配置してはいけないチープな要素**
+- 右下のオレンジ色フローティングボタン（fixed bottom-6 right-6等）は絶対禁止
+- 絵文字アイコンの円形ボタン（⬆️、📧等）は絶対禁止
+- animate-bounce等のバウンスアニメーションは絶対禁止
+- カラフルなグラデーション背景（from-orange-500 to-amber-600等）は絶対禁止
+- チープな影効果（shadow-2xl、hover:shadow-3xl等）は絶対禁止
+- 過度な装飾的ボタンは絶対禁止
+
+```tsx
+// ❌ 絶対禁止：チープなフローティングボタンパターン
+<div className="fixed bottom-6 right-6 z-50">
+  <button className="w-14 h-14 bg-gradient-to-r from-orange-500 to-amber-600 rounded-full text-white shadow-2xl hover:shadow-3xl transition-all duration-300 animate-bounce">
+    <span className="text-2xl">⬆️</span>
+  </button>
+</div>
+
+// ❌ 絶対禁止：装飾的SNSボタンパターン  
+<div className="fixed bottom-6 right-6 z-50 space-y-3">
+  <button className="w-12 h-12 bg-blue-600 rounded-full text-white shadow-lg hover:scale-110 transition-transform">
+    <span>📧</span>
+  </button>
+  <button className="w-12 h-12 bg-green-600 rounded-full text-white shadow-lg hover:scale-110 transition-transform">
+    <span>🏆</span>
+  </button>
+</div>
+
+// ✅ 推奨：シンプルで上品なFooterデザイン
+<footer className="bg-gray-900 text-white">
+  <div className="max-w-7xl mx-auto px-6 py-16">
+    {/* 高級感のあるシンプルなFooterコンテンツ */}
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+      {/* ナビゲーション、SNS、コピーライト等 */}
+    </div>
+  </div>
+</footer>
+```
+
+#### Footer実装チェックリスト（必須）
+```
+🚨 Footerの絶対確認項目：
+□ 右下のオレンジ色フローティングボタンが完全に削除されているか
+□ 絵文字アイコンボタン（⬆️、📧、🏆等）が削除されているか
+□ animate-bounce アニメーションが削除されているか
+□ fixed bottom-6 right-6 の固定配置要素が削除されているか
+□ カラフルなグラデーション背景が削除されているか
+□ 過度な影効果（shadow-2xl、shadow-3xl等）が削除されているか
+□ hover:scale-110 等の安っぽいホバー効果が削除されているか
+□ 全体的にシンプルで上品なFooterデザインになっているか
+□ 高級感を損なう装飾的要素が一切残っていないか
+```
+
+```tsx
+// ✅ 推奨：FV専用左中央配置パターン（クリーンデザイン）
+export const HeroTextLeftCenter: React.FC = () => (
+  <div className="h-full flex items-center justify-start pl-8 md:pl-16 lg:pl-24">
+    <div className="text-left max-w-2xl space-y-6">
+      {/* シンプルなオーバータイトル */}
+      <span className="text-amber-600 font-semibold uppercase tracking-wider text-sm">
+        Premium Café Experience
+      </span>
+      
+      {/* メインヘッドライン（装飾なし） */}
+      <h1 className="text-4xl md:text-6xl lg:text-7xl font-heading font-bold text-white leading-tight">
+        心を満たす
+        <span className="block text-amber-400">至福のひととき</span>
+      </h1>
+      
+      {/* シンプルな説明文 */}
+      <p className="text-lg md:text-xl text-white/90 leading-relaxed max-w-xl">
+        厳選された豆から生まれる最高の一杯で、あなたの特別な時間を彩ります
+      </p>
+      
+      {/* CTAボタンのみ（その他の要素は一切なし） */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <Button variant="luxury" size="lg">
+          メニューを見る
+        </Button>
+        <Button variant="outline" size="lg" className="text-white border-white hover:bg-white hover:text-gray-900">
+          店舗情報
+        </Button>
+      </div>
+    </div>
+  </div>
+);
+
+// ❌ 禁止：中央配置パターン
+export const HeroTextCenter: React.FC = () => (
+  <div className="text-center"> {/* 絶対禁止 */}
+    <h1>中央配置は禁止</h1>
+  </div>
+);
+```
+
 ```tsx
 // 左寄せ：力強い・主張的
 export const TextAlignmentLeft: React.FC = () => (
@@ -609,6 +1081,15 @@ const BusinessHeroPlaceholder: React.FC = () => {
 
 #### デザイン・レイアウト
 - [ ] 画面領域（100vh）を完全に活用しているか
+- [ ] 🚨 **FV画像が100vh全体に絶対配置されているか**（カフェ関連高品質画像必須）
+- [ ] 🚨 **FV文字配置が中央より左側（左寄せまたは左中央）になっているか**
+- [ ] ❌ **FV文字が中央配置（text-center）になっていないか**（絶対禁止）
+- [ ] 🚨 **色付きアイコン・装飾要素が完全に削除されているか**（絶対禁止）
+- [ ] 🚨 **営業時間・ロケーション情報が削除されているか**（絶対禁止）
+- [ ] 🚨 **スクロールアイコンが削除されているか**（絶対禁止）
+- [ ] 🚨 **角丸四角形アイコン（w-12 h-12 rounded-xl等）が完全に削除されているか**（絶対禁止）
+- [ ] 🚨 **背景色付きグラデーションアイコンが削除されているか**（絶対禁止）
+- [ ] エレガントなテキスト統合デザインが実装されているか
 - [ ] 画像が高品質（WebP形式、適切な解像度）か
 - [ ] テキストが読みやすい（十分なコントラスト）か
 - [ ] レスポンシブ対応が適切か
@@ -623,6 +1104,13 @@ const BusinessHeroPlaceholder: React.FC = () => {
 - [ ] CTAボタンが目立つ位置にあるか
 - [ ] ブランドの個性が表現されているか
 - [ ] スクロール促進要素があるか
+
+#### 🚨 セクション見出し（カフェHP専用）
+- [ ] **主要セクション見出しが英語表記になっているか**（ABOUT US, OUR MENU等）
+- [ ] **見出しに背景色・グラデーション背景が使用されていないか**（絶対禁止）
+- [ ] **text-amber-800 font-semibold text-sm のスタイルが適用されているか**
+- [ ] **inline-block px-4 py-2 のシンプルなレイアウトが適用されているか**
+- [ ] サブタイトル・説明文は日本語で適切に記載されているか
 
 #### 技術・パフォーマンス
 - [ ] 画像の読み込み速度が適切か（3秒以内）
@@ -963,6 +1451,21 @@ export const Input: React.FC<InputProps> = ({
   }
 }
 
+/* 🚨 高級感のある縦線スクロールアニメーション（必須） */
+@keyframes scroll-line {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(48px);
+    opacity: 0;
+  }
+}
+
 /* アニメーションクラス */
 .animate-fade-in {
   animation: fadeIn 0.8s ease-out;
@@ -986,6 +1489,11 @@ export const Input: React.FC<InputProps> = ({
 
 .animate-pulse-soft {
   animation: pulse-soft 2s ease-in-out infinite;
+}
+
+/* 🚨 高級感のある縦線スクロールアニメーション */
+.animate-scroll-line {
+  animation: scroll-line 2s ease-in-out infinite;
 }
 
 /* アニメーション遅延 */
@@ -1120,3 +1628,131 @@ export const Grid: React.FC<GridProps> = ({
 - [ ] カラーコントラストが適切か
 - [ ] タッチターゲットが44px以上か
 - [ ] ローディング状態が適切に表示されるか
+### 🍽️ メニューセクション商品画像の絶対実装ルール（必須）
+
+#### メニューアイテム画像の必須要件
+**全てのメニューアイテムには必ず高品質な商品画像を配置すること**
+- 画像なしのメニューアイテムは絶対禁止
+- テキストのみのメニュー表示は絶対禁止
+- プレースホルダー画像の長期使用は禁止
+
+#### 推奨画像仕様・品質基準
+```tsx
+// 🚨 必須：MenuItemインターフェース（画像URL必須）
+interface MenuItem {
+  name: string;
+  description: string;
+  price: string;
+  category: 'coffee' | 'tea' | 'food' | 'dessert';
+  isPopular?: boolean;
+  imageUrl: string; // 🚨 必須プロパティ
+}
+
+// ✅ 推奨：高品質画像の実装パターン
+const menuItems: MenuItem[] = [
+  {
+    name: 'エスプレッソ',
+    description: '深煎り豆を使用した濃厚なエスプレッソ',
+    price: '¥380',
+    category: 'coffee',
+    isPopular: true,
+    imageUrl: 'https://images.unsplash.com/photo-1510707577719-ae7c14805e3a?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80', // 高品質Unsplash画像
+  }
+];
+```
+
+#### 画像表示レイアウトの絶対ルール
+```tsx
+// ✅ 推奨：メニューアイテム画像レイアウト
+<div className="group relative bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 transform hover:-translate-y-2 border border-gray-100">
+  {/* 🚨 必須：商品画像エリア */}
+  <div className="relative h-48 overflow-hidden">
+    <img
+      src={item.imageUrl}
+      alt={item.name}
+      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+      loading="lazy"
+    />
+    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+  </div>
+  
+  {/* アイテム情報 */}
+  <div className="p-6">
+    {/* テキスト情報 */}
+  </div>
+</div>
+```
+
+#### 画像品質・パフォーマンス要件
+- **解像度**: 最小600x400px、推奨800x600px以上
+- **アスペクト比**: 4:3または16:9推奨
+- **ファイル形式**: WebP推奨、JPEGフォールバック
+- **ファイルサイズ**: 各画像200KB以下（最適化必須）
+- **読み込み**: `loading="lazy"` 必須実装
+- **alt属性**: 商品名を適切に設定
+
+#### カテゴリー別画像選定ガイドライン
+```tsx
+const imageCategories = {
+  coffee: {
+    keywords: 'espresso,latte,cappuccino,americano,coffee,cafe',
+    style: '温かみのある照明、美しいラテアート、上質なカップ',
+    避けるべき: 'チープなマグカップ、蛍光灯照明、背景雑然'
+  },
+  tea: {
+    keywords: 'tea,matcha,earl-grey,herbal,teacup,elegant',
+    style: 'エレガントなティーカップ、美しい茶葉、上品な背景',
+    避けるべき: 'ティーバッグ、プラスチック容器、安っぽい演出'
+  },
+  food: {
+    keywords: 'croissant,sandwich,quiche,bakery,fresh,artisan',
+    style: '新鮮さが伝わる、手作り感、温かみのある照明',
+    避けるべき: '冷凍食品感、人工的な色合い、安っぽい盛り付け'
+  },
+  dessert: {
+    keywords: 'tiramisu,cheesecake,tart,dessert,elegant,premium',
+    style: '上品な盛り付け、美しい断面、高級感のある器',
+    避けるべき: 'チープな飾り付け、人工的な色、雑な盛り付け'
+  }
+};
+```
+
+#### メニュー画像実装チェックリスト
+```
+🚨 メニュー画像の絶対確認項目：
+□ 全メニューアイテムに imageUrl プロパティが設定されているか
+□ 全画像が実際に表示されているか（ブラウザで目視確認必須）
+□ 画像の高さが統一されているか（h-48固定）
+□ object-cover が適用されているか
+□ ホバー時のズーム効果（scale-110）が実装されているか
+□ loading="lazy" が設定されているか
+□ alt属性が適切に設定されているか
+□ 人気マークが画像上に適切に配置されているか（top-4 right-4 z-10）
+□ 画像とテキストが美しく分離されているか
+□ 全体的に高級感のあるレイアウトになっているか
+□ レスポンシブ対応が適切に実装されているか
+□ 画像読み込みエラー時の対応が実装されているか
+```
+
+### 🚨 カフェHP専用チェック項目
+- [ ] **セクション見出しが英語表記になっているか**（ABOUT US, OUR MENU等）
+- [ ] **見出しに背景色・装飾が使用されていないか**（シンプルなテキストのみ）
+- [ ] **カフェテーマのカラーパレット（amber系）が適切に使用されているか**
+- [ ] **絵文字が完全に削除されているか**（全セクション確認必須）
+- [ ] **カードデザインが排除されているか**（自然な流れのレイアウト採用）
+- [ ] **FVの色付きアイコン・装飾要素が完全に削除されているか**（営業中・WiFi・電源等）
+- [ ] **FVの営業時間・ロケーション情報が削除されているか**（原宿・表参道等）
+- [ ] **FVに高級感のある縦線スクロールアニメーションが実装されているか**
+- [ ] **丸いスクロールアイコン・矢印等が削除されているか**
+- [ ] **チープなフローティングボタンが完全に削除されているか**（特にオレンジ色）
+- [ ] **絵文字アイコンボタン（⬆️、📧等）が削除されているか**
+- [ ] **animate-bounce等の安っぽいアニメーションが削除されているか**
+- [ ] **チープな色使い（オレンジ・緑・明るい青等）が排除されているか**
+- [ ] **角丸四角形アイコン（w-12 h-12 rounded-xl等）が完全に削除されているか**
+- [ ] **背景色付きグラデーションアイコンが削除されているか**
+- [ ] **エレガントなテキスト統合デザインが実装されているか**
+- [ ] **🍽️ 全メニューアイテムに高品質な商品画像が配置されているか**（絶対必須）
+- [ ] **メニュー画像のレイアウトが統一されているか**（h-48, object-cover等）
+- [ ] **🏷️ カテゴリータブに絵文字・カードデザインが使用されていないか**（絶対禁止）
+- [ ] **カテゴリータブがシンプルな下線デザインになっているか**（border-b-2推奨）
+- [ ] **カフェらしい温かみと高級感が両立されているか**

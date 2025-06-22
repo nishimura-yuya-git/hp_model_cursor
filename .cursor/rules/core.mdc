@@ -3,6 +3,11 @@ description:
 globs: 
 alwaysApply: true
 ---
+---
+description: 
+globs: 
+alwaysApply: true
+---
 # 🎯 開発哲学・基本原則
 
 ## 技術スタック
@@ -25,7 +30,6 @@ alwaysApply: true
 
 ### 推奨代替案
 - **カスタムSVG**: インラインSVGを直接記述（最優先）
-- **絵文字**: Unicode絵文字（☕ 🫖 🥐 🍰 📧 📱 等）
 - **CSS**: CSSでのアイコン作成
 - **SVGスプライト**: 軽量なSVGスプライトシステム
 
@@ -158,4 +162,3 @@ export default defineConfig({
 1. TypeScript型エラーを確認
 2. 未使用のインポートを削除
 3. `npm run build` で詳細エラーを確認
-
