@@ -97,15 +97,16 @@ alwaysApply: true
 □ 全体的にミニマルで高級感のあるデザインになっているか
 ```
 
-### 🏷️ カフェHP専用セクション見出しルール（必須）
+### 🏷️ HP専用セクション見出しルール（必須）
 
 #### セクション見出しの英語化原則
 **主要セクションの見出しは英語で表記し、高級感・国際的な印象を演出する**
 
 #### 必須英語見出し一覧
 ```tsx
-// 🚨 必須：セクション見出しの英語表記
+// 🚨 必須：セクション見出しの英語表記（カフェ・ジム共通）
 const SECTION_HEADINGS = {
+  // カフェHP用
   about: "ABOUT US",           // ❌ 「私たちについて」
   menu: "OUR MENU",           // ❌ 「メニュー」
   location: "LOCATION",       // ❌ 「店舗情報」
@@ -113,7 +114,13 @@ const SECTION_HEADINGS = {
   news: "NEWS",               // ❌ 「お知らせ」
   gallery: "GALLERY",         // ❌ 「ギャラリー」
   concept: "OUR CONCEPT",     // ❌ 「コンセプト」
-  access: "ACCESS"            // ❌ 「アクセス」
+  access: "ACCESS",           // ❌ 「アクセス」
+  
+  // ジムHP用
+  programs: "PROGRAMS",       // ❌ 「プログラム」
+  trainers: "TRAINERS",       // ❌ 「トレーナー」
+  facilities: "FACILITIES",   // ❌ 「施設」
+  membership: "MEMBERSHIP",   // ❌ 「料金プラン」
 } as const;
 ```
 
@@ -148,7 +155,7 @@ export const SectionHeading: React.FC<{ title: string }> = ({ title }) => (
     </div>
     
     {/* 以下、サブタイトル・説明文は日本語可 */}
-    <h2 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold text-gray-900 mb-6">
+    <h2 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-gray-900 mb-6">
       {/* サブタイトル（日本語） */}
     </h2>
   </div>
@@ -263,13 +270,10 @@ export const HeroSection: React.FC = () => {
       <div className="relative z-10 w-full h-full">
         <div className="h-full flex items-center justify-start pl-8 md:pl-16 lg:pl-24">
           <div className="text-left max-w-4xl space-y-8">
-            {/* シンプルなブランドバッジ */}
-            <div className="inline-block px-6 py-3 bg-white/10 backdrop-blur-sm rounded-full text-white font-semibold animate-fade-in">
-              Café Lumière - Since 2020
-            </div>
+
             
             {/* メインタイトル */}
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-heading font-bold text-white leading-tight animate-fade-in animation-delay-100">
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif font-bold text-white leading-tight animate-fade-in animation-delay-100">
               <span className="block mb-4">心地よい空間で</span>
               <span className="bg-gradient-to-r from-amber-300 via-orange-300 to-yellow-300 bg-clip-text text-transparent">
                 特別なひととき
@@ -277,7 +281,7 @@ export const HeroSection: React.FC = () => {
             </h1>
             
             {/* サブタイトル */}
-            <p className="text-xl md:text-2xl lg:text-3xl text-white/90 max-w-3xl animate-fade-in animation-delay-200 leading-relaxed">
+            <p className="text-xl md:text-2xl lg:text-3xl font-serif text-white/90 max-w-3xl animate-fade-in animation-delay-200 leading-relaxed">
               厳選された豆から淹れる最高の一杯と、<br />
               温かみのある空間があなたをお待ちしています
             </p>
@@ -534,12 +538,12 @@ export const HeroImmersive: React.FC = () => {
         
         {/* メインコンテンツ */}
         <div className="flex-2 flex flex-col justify-center space-y-8">
-          <h1 className="text-4xl md:text-6xl lg:text-8xl font-heading font-bold text-white leading-tight animate-fade-in">
-            <span className="block mb-4">未来を</span>
-            <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-              創造する
-            </span>
-          </h1>
+                      <h1 className="text-4xl md:text-6xl lg:text-8xl font-serif font-bold text-white leading-tight animate-fade-in">
+              <span className="block mb-4">未来を</span>
+              <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                創造する
+              </span>
+            </h1>
           
           <p className="text-xl md:text-2xl lg:text-3xl text-white/90 max-w-4xl animate-fade-in animation-delay-200">
             革新的なテクノロジーで、あなたのビジネスを次のステージへ
@@ -585,7 +589,7 @@ export const HeroGoldenRatio: React.FC = () => {
             </div>
             
             {/* メインヘッドライン */}
-            <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-heading font-bold leading-tight animate-slide-up">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-serif font-bold leading-tight animate-slide-up">
               ビジネスの
               <span className="block mt-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                 可能性を解放
@@ -674,7 +678,7 @@ const TextHierarchyTemplate = {
   // 第1階層：メインメッセージ
   headline: {
     element: 'h1',
-    classes: 'text-4xl md:text-6xl lg:text-8xl font-heading font-bold leading-tight mb-6',
+    classes: 'text-4xl md:text-6xl lg:text-8xl font-serif font-bold leading-tight mb-6',
     maxLength: 30,
     example: '未来を創造する'
   },
@@ -841,7 +845,7 @@ export const HeroTextLeftCenter: React.FC = () => (
       </span>
       
       {/* メインヘッドライン（装飾なし） */}
-      <h1 className="text-4xl md:text-6xl lg:text-7xl font-heading font-bold text-white leading-tight">
+      <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold text-white leading-tight">
         心を満たす
         <span className="block text-amber-400">至福のひととき</span>
       </h1>
@@ -879,7 +883,7 @@ export const TextAlignmentLeft: React.FC = () => (
     <span className="text-blue-600 font-semibold uppercase tracking-wider text-sm">
       革新的テクノロジー
     </span>
-    <h1 className="text-5xl md:text-7xl font-heading font-bold text-gray-900 leading-tight">
+    <h1 className="text-5xl md:text-7xl font-serif font-bold text-gray-900 leading-tight">
       ビジネスを
       <span className="block text-blue-600">加速させる</span>
     </h1>
@@ -895,7 +899,7 @@ export const TextAlignmentCenter: React.FC = () => (
     <span className="text-purple-600 font-semibold uppercase tracking-wider text-sm">
       プレミアム体験
     </span>
-    <h1 className="text-5xl md:text-7xl font-heading font-bold text-gray-900 leading-tight">
+    <h1 className="text-5xl md:text-7xl font-serif font-bold text-gray-900 leading-tight">
       最高の
       <span className="block bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
         パフォーマンス
@@ -913,7 +917,7 @@ export const TextAlignmentRight: React.FC = () => (
     <span className="text-pink-600 font-semibold uppercase tracking-wider text-sm">
       ラグジュアリー
     </span>
-    <h1 className="text-5xl md:text-7xl font-heading font-bold text-gray-900 leading-tight">
+    <h1 className="text-5xl md:text-7xl font-serif font-bold text-gray-900 leading-tight">
       <span className="block bg-gradient-to-l from-pink-600 to-purple-600 bg-clip-text text-transparent">
         エレガンス
       </span>
@@ -1028,7 +1032,7 @@ const BusinessHeroPlaceholder: React.FC = () => {
       {/* コンテンツ */}
       <div className="absolute inset-0 flex items-center justify-center text-white">
         <div className="text-center space-y-6">
-          <h1 className="text-6xl font-heading font-bold">
+          <h1 className="text-6xl font-serif font-bold">
             ビジネスの未来を
             <span className="block text-blue-400">創造する</span>
           </h1>
@@ -1198,8 +1202,14 @@ const BusinessHeroPlaceholder: React.FC = () => {
 /* プレミアムフォント必須 */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@400;500;600;700;800;900&display=swap');
 
+/* 🚨 重要：明朝体フォント変更（ユーザー要望対応） */
 .font-heading {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Playfair Display', serif; /* ❌ 旧：heading専用クラス */
+  font-feature-settings: 'liga' on, 'calt' on;
+}
+
+.font-serif {
+  font-family: 'Playfair Display', serif; /* ✅ 推奨：明朝体フォント */
   font-feature-settings: 'liga' on, 'calt' on;
 }
 
@@ -1207,6 +1217,14 @@ const BusinessHeroPlaceholder: React.FC = () => {
   font-family: 'Inter', sans-serif;
   font-feature-settings: 'liga' on, 'calt' on, 'kern' on;
 }
+
+/* 🚨 フォント使用ルール変更 */
+/*
+旧：font-heading → 新：font-serif
+- HeroSectionのメインタイトル・サブタイトルは font-serif を使用
+- 「あなたの限界を超えていこう」等のメッセージテキストは明朝体で表示
+- 高級感・上品さを演出するため明朝体を積極活用
+*/
 ```
 
 ### タイポグラフィスケール
@@ -1318,21 +1336,36 @@ export const Button: React.FC<ButtonProps> = ({
 ```
 
 ### 入力フィールド（高級感）
-```tsx
-// src/components/ui/Input/Input.tsx
-interface InputProps {
-  label?: string;
-  placeholder?: string;
-  type?: 'text' | 'email' | 'password' | 'number';
-  value?: string;
-  onChange?: (value: string) => void;
-  error?: string;
-  disabled?: boolean;
-  required?: boolean;
-  className?: string;
-}
 
-export const Input: React.FC<InputProps> = ({
+#### 🎨 高級感フォームインプットの設計原則
+**フォーム要素には洗練された高級感を演出し、ユーザー体験を向上させる**
+
+#### 🚨 必須実装：プレミアム品質のインプットデザイン
+- **Border Radius**: `rounded-xl`で適度な丸みを演出
+- **パディング調整**: `px-6`で余裕のある内部スペース確保
+- **多段階シャドウ**: hover/focusで段階的な立体感演出
+- **フォントウェイト**: `font-medium`で読みやすさ向上
+- **統一デザイン**: 全インプット要素の一貫したスタイル適用
+
+#### ✅ 推奨：高級感フォームインプットテンプレート
+```tsx
+// 🚨 必須：高級感のあるインプットクラス定義
+const PREMIUM_INPUT_CLASSES = {
+  // ベーススタイル（全インプット共通）
+  base: 'w-full px-6 py-4 border border-gray-300 rounded-xl focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-300 text-base bg-white hover:border-gray-400 font-medium',
+  
+  // シャドウ効果（3段階）
+  shadows: 'shadow-sm hover:shadow-md focus:shadow-lg',
+  
+  // エラー状態
+  error: 'border-red-300 focus:border-red-500 focus:ring-red-200',
+  
+  // 成功状態
+  success: 'border-green-300 focus:border-green-500 focus:ring-green-200'
+} as const;
+
+// ✅ 推奨：汎用インプットコンポーネント
+export const PremiumInput: React.FC<InputProps> = ({
   label,
   placeholder,
   type = 'text',
@@ -1344,9 +1377,9 @@ export const Input: React.FC<InputProps> = ({
   className = ''
 }) => {
   return (
-    <div className={`space-y-2 ${className}`}>
+    <div className={`space-y-3 ${className}`}>
       {label && (
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-semibold text-gray-700 mb-3">
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
@@ -1359,22 +1392,15 @@ export const Input: React.FC<InputProps> = ({
           placeholder={placeholder}
           disabled={disabled}
           className={`
-            w-full px-4 py-3 text-base
-            border-2 rounded-xl
-            transition-all duration-300 ease-in-out
-            focus:outline-none focus:ring-4 focus:ring-offset-1
-            disabled:opacity-50 disabled:cursor-not-allowed
-            ${error 
-              ? 'border-red-300 focus:border-red-500 focus:ring-red-200' 
-              : 'border-gray-300 focus:border-blue-500 focus:ring-blue-200'
-            }
-            ${!disabled && 'hover:border-gray-400'}
-            bg-white shadow-sm hover:shadow-md focus:shadow-lg
+            ${PREMIUM_INPUT_CLASSES.base}
+            ${PREMIUM_INPUT_CLASSES.shadows}
+            ${error ? PREMIUM_INPUT_CLASSES.error : ''}
+            ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
           `}
         />
       </div>
       {error && (
-        <p className="text-sm text-red-600 flex items-center space-x-1">
+        <p className="text-sm text-red-600 flex items-center space-x-1 mt-2">
           <span>⚠️</span>
           <span>{error}</span>
         </p>
@@ -1382,6 +1408,151 @@ export const Input: React.FC<InputProps> = ({
     </div>
   );
 };
+
+// ✅ 推奨：プレミアムテキストエリア
+export const PremiumTextarea: React.FC<TextareaProps> = ({
+  label,
+  placeholder,
+  value,
+  onChange,
+  rows = 6,
+  error,
+  disabled = false,
+  required = false,
+  className = ''
+}) => {
+  return (
+    <div className={`space-y-3 ${className}`}>
+      {label && (
+        <label className="block text-sm font-semibold text-gray-700 mb-3">
+          {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+      )}
+      <div className="relative">
+        <textarea
+          value={value}
+          onChange={(e) => onChange?.(e.target.value)}
+          placeholder={placeholder}
+          rows={rows}
+          disabled={disabled}
+          className={`
+            ${PREMIUM_INPUT_CLASSES.base}
+            ${PREMIUM_INPUT_CLASSES.shadows}
+            resize-none
+            ${error ? PREMIUM_INPUT_CLASSES.error : ''}
+            ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
+          `}
+        />
+      </div>
+      {error && (
+        <p className="text-sm text-red-600 flex items-center space-x-1 mt-2">
+          <span>⚠️</span>
+          <span>{error}</span>
+        </p>
+      )}
+    </div>
+  );
+};
+
+// ✅ 推奨：プレミアムセレクト
+export const PremiumSelect: React.FC<SelectProps> = ({
+  label,
+  options,
+  value,
+  onChange,
+  placeholder = '選択してください',
+  error,
+  disabled = false,
+  required = false,
+  className = ''
+}) => {
+  return (
+    <div className={`space-y-3 ${className}`}>
+      {label && (
+        <label className="block text-sm font-semibold text-gray-700 mb-3">
+          {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+      )}
+      <div className="relative">
+        <select
+          value={value}
+          onChange={(e) => onChange?.(e.target.value)}
+          disabled={disabled}
+          className={`
+            ${PREMIUM_INPUT_CLASSES.base}
+            ${PREMIUM_INPUT_CLASSES.shadows}
+            ${error ? PREMIUM_INPUT_CLASSES.error : ''}
+            ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
+          `}
+        >
+          <option value="">{placeholder}</option>
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      {error && (
+        <p className="text-sm text-red-600 flex items-center space-x-1 mt-2">
+          <span>⚠️</span>
+          <span>{error}</span>
+        </p>
+      )}
+    </div>
+  );
+};
+```
+
+#### 🎯 高級感フォーム実装チェックリスト（必須）
+
+#### インプットデザイン確認項目
+```
+🚨 プレミアムフォームインプットの必須確認項目：
+□ rounded-xl のボーダーラディウスが適用されているか
+□ px-6 py-4 の余裕のあるパディングが設定されているか
+□ shadow-sm hover:shadow-md focus:shadow-lg の3段階シャドウが実装されているか
+□ font-medium でフォントウェイトが調整されているか
+□ transition-all duration-300 でスムーズなアニメーションが実装されているか
+□ focus:ring-2 focus:ring-red-200 でフォーカスリングが適切に表示されるか
+□ hover:border-gray-400 でホバー状態の視覚的フィードバックがあるか
+□ label要素が font-semibold で強調されているか
+□ エラー状態が適切に視覚化されているか
+□ 全フォーム要素（input、textarea、select）で統一されたスタイルが適用されているか
+```
+
+#### ボタンデザイン確認項目
+```
+🚨 プレミアムフォームボタンの必須確認項目：
+□ 送信ボタンに rounded-xl が適用されているか
+□ グラデーション背景（from-red-600 to-red-700）が実装されているか
+□ ホバー効果（hover:scale-105）が実装されているか
+□ シャドウ効果（shadow-lg hover:shadow-xl）が実装されているか
+□ ボタンテキストが適切に中央揃えされているか
+□ フォーム全体のスタイル統一が保たれているか
+□ 高級感・洗練された印象を与えているか
+```
+
+#### UX改善効果
+- **視覚的フィードバック**: hover/focusで明確な状態変化
+- **高級感演出**: 丸みと影による洗練されたデザイン
+- **一貫性確保**: 全フォーム要素での統一されたスタイル
+- **アクセシビリティ向上**: フォーカス状態の視認性強化
+- **ブランド価値向上**: プレミアムブランドイメージに合致
+
+#### 実装済み事例（ContactSectionでの適用）
+```tsx
+// ✅ 実装済み：ContactSection.tsxでの高級感フォーム
+<input
+  type="text"
+  id="name"
+  name="name"
+  required
+  className="w-full px-6 py-4 border border-gray-300 rounded-xl focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-300 text-base bg-white hover:border-gray-400 shadow-sm hover:shadow-md focus:shadow-lg font-medium"
+  placeholder="山田 太郎"
+/>
 ```
 
 ## プレミアムアニメーション
@@ -1613,6 +1784,308 @@ export const Grid: React.FC<GridProps> = ({
 }
 ```
 
+## 🖤 プレミアムプラン専用・黒光感デザインルール（必須）
+
+### プレミアムプランの高級感演出原則
+**プレミアムプラン（最高級）には黒を基調とした特別なデザインを適用し、他プランとの明確な差別化を図る**
+
+### 🚨 プレミアム専用カラーパレット（必須実装）
+
+#### メインカラー：深い黒のグラデーション
+```tsx
+// 🚨 必須：プレミアムプラン専用カラー定義
+const PREMIUM_COLORS = {
+  // 黒光グラデーション（メイン）
+  mainGradient: 'bg-gradient-to-r from-gray-900 via-black to-gray-900',
+  
+  // レイヤーオーバーレイ
+  layerOverlay: 'bg-gradient-to-r from-gray-800/20 via-transparent to-gray-800/20',
+  
+  // テキストグラデーション
+  textGradient: 'bg-gradient-to-r from-gray-100 to-gray-200 bg-clip-text text-transparent',
+  
+  // 境界線・装飾
+  border: 'border-gray-700 hover:border-gray-500',
+  
+  // シャドウ
+  shadow: 'shadow-2xl hover:shadow-3xl',
+  
+  // アクセント
+  accent: 'text-gray-300',
+  
+  // 高級装飾円
+  decoration: 'bg-gray-700/30'
+} as const;
+```
+
+#### プレミアムヘッダーデザインテンプレート
+```tsx
+// ✅ 推奨：プレミアムプラン黒光ヘッダー
+<div className="p-6 text-center bg-gradient-to-r from-gray-900 via-black to-gray-900 relative overflow-hidden">
+  {/* レイヤー効果（深みの演出） */}
+  <div className="absolute inset-0 bg-gradient-to-r from-gray-800/20 via-transparent to-gray-800/20"></div>
+  
+  {/* 装飾円（高級感アップ） */}
+  <div className="absolute top-4 right-4 w-32 h-32 bg-gray-700/30 rounded-full blur-3xl"></div>
+  <div className="absolute bottom-4 left-4 w-24 h-24 bg-gray-600/20 rounded-full blur-2xl"></div>
+  
+  {/* メインコンテンツ */}
+  <div className="relative z-10">
+    <h3 className="text-2xl font-bold text-white mb-2 tracking-wide">プレミアム</h3>
+    <div className="text-3xl font-bold bg-gradient-to-r from-gray-100 to-white bg-clip-text text-transparent mb-1 tracking-tight">
+      ¥18,800
+    </div>
+    <div className="text-gray-300 text-sm">月額</div>
+    <p className="text-gray-300 text-sm mt-2 font-medium">最高級のトレーニング体験</p>
+  </div>
+</div>
+```
+
+#### プレミアム機能項目デザイン
+```tsx
+// ✅ 推奨：プレミアム機能の表示スタイル
+<div className="p-4 text-center">
+  <span className="text-gray-800 font-bold bg-gradient-to-r from-gray-100 to-gray-200 bg-clip-text text-transparent border-b border-gray-800 pb-1">
+    {機能項目テキスト}
+  </span>
+</div>
+```
+
+#### プレミアムCTAボタンデザイン
+```tsx
+// ✅ 推奨：プレミアム専用CTAボタン
+<button className="w-full py-3 px-6 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 bg-gradient-to-r from-gray-900 via-black to-gray-900 text-white border border-gray-700 hover:border-gray-500 shadow-2xl hover:shadow-3xl relative overflow-hidden group">
+  {/* ホバー時の内部光沢効果 */}
+  <div className="absolute inset-0 bg-gradient-to-r from-gray-800/50 via-transparent to-gray-800/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+  
+  {/* 底部グラデーションライン */}
+  <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+  
+  {/* ボタンテキスト */}
+  <span className="relative z-10 tracking-wide group-hover:tracking-wider transition-all duration-300">
+    このプランを選ぶ
+  </span>
+</button>
+```
+
+### 🎯 プレミアムプラン実装チェックリスト（絶対必須）
+
+#### 黒光感ヘッダー確認項目
+```
+🚨 プレミアムヘッダーの必須確認項目：
+□ メイングラデーション（from-gray-900 via-black to-gray-900）が実装されているか
+□ レイヤーオーバーレイ効果が適切に配置されているか
+□ 装飾円が2つ適切に配置されているか（w-32 h-32, w-24 h-24）
+□ プラン名が tracking-wide で実装されているか
+□ 価格表示がグラデーションテキスト（from-gray-100 to-white）になっているか
+□ 説明文が text-gray-300 で統一されているか
+□ relative z-10 の階層構造が正しく実装されているか
+□ 全体的に高級感・重厚感が演出されているか
+```
+
+#### 機能項目スタイル確認項目
+```
+🚨 プレミアム機能項目の必須確認項目：
+□ テキストがグラデーション（from-gray-100 to-gray-200）になっているか
+□ bg-clip-text text-transparent が適用されているか
+□ 下線装飾（border-b border-gray-800）が実装されているか
+□ font-bold でフォントの太さが強調されているか
+□ 他プラン（ブルー・レッド）との明確な差別化ができているか
+□ 全体的に洗練された印象を与えているか
+```
+
+#### CTAボタン確認項目
+```
+🚨 プレミアムCTAボタンの必須確認項目：
+□ 黒光グラデーション背景（from-gray-900 via-black to-gray-900）が実装されているか
+□ 境界線（border-gray-700 hover:border-gray-500）が適切に設定されているか
+□ 多層シャドウ（shadow-2xl hover:shadow-3xl）が実装されているか
+□ ホバー時の内部光沢効果が実装されているか
+□ 底部グラデーションライン効果が実装されているか
+□ 文字のトラッキング変化（tracking-wide → tracking-wider）が実装されているか
+□ group クラスによるホバーアニメーションが正しく動作するか
+□ 全体的に最高級の印象を与えるデザインになっているか
+```
+
+### 🔄 プレミアムプラン色彩対比原則
+
+#### 3プラン色彩戦略
+```tsx
+// 🚨 必須：3プランの明確な色分け戦略
+const PLAN_COLORS = {
+  basic: {
+    name: 'ベーシック',
+    theme: 'ブルー系（信頼感・安定感）',
+    colors: {
+      header: 'bg-gradient-to-r from-blue-600 to-blue-700',
+      text: 'text-blue-600',
+      button: 'border-blue-600 text-blue-600 hover:bg-blue-600'
+    }
+  },
+  
+  standard: {
+    name: 'スタンダード',
+    theme: 'レッド系（人気・エネルギー）',
+    colors: {
+      header: 'bg-gradient-to-r from-red-600 to-red-700',
+      text: 'text-red-600',
+      button: 'bg-gradient-to-r from-red-600 to-red-700 text-white',
+      badge: '人気No.1'
+    }
+  },
+  
+  premium: {
+    name: 'プレミアム',
+    theme: '黒系（高級感・排他性）',
+    colors: {
+      header: 'bg-gradient-to-r from-gray-900 via-black to-gray-900',
+      text: 'text-gray-800 bg-gradient-to-r from-gray-100 to-gray-200 bg-clip-text text-transparent',
+      button: 'bg-gradient-to-r from-gray-900 via-black to-gray-900 text-white border-gray-700',
+      accent: 'text-gray-300'
+    }
+  }
+} as const;
+```
+
+### 🏆 プレミアムブランディング効果
+
+#### プレミアムプランの心理的効果
+- **排他性の演出**: 黒の重厚感で特別感を創出
+- **高級感の視覚化**: グラデーション・シャドウで品質の高さを表現
+- **信頼性の向上**: 洗練されたデザインで安心感を提供
+- **購買意欲の促進**: 他プランとの明確な差別化で価値を実感
+
+## 📱 フローティングバナー実装ルール（必須）
+
+### フローティングバナーの基本原則
+**画面右端固定のアクションバナーで重要な行動誘導を効果的に実現**
+
+### 🚨 フローティングバナー実装要件（絶対遵守）
+
+#### 必須配置・表示仕様
+- **配置位置**: 画面右端ピッタリ（right-0）
+- **表示タイミング**: FV即座表示（スクロール制御なし）
+- **レイアウト**: 縦並び（アイコン上 + テキスト下）
+- **間隔**: 最小化（space-y-1）
+- **角丸**: 左側のみ（rounded-l-xl）
+- **固定位置**: fixed bottom-4 right-0
+
+#### 推奨アクション構成
+```tsx
+// 🚨 必須：フローティングバナーの基本構成
+const FLOATING_ACTIONS = [
+  {
+    type: 'line',
+    label: 'LINE公式',
+    icon: 'MessageCircle', // カスタムSVG推奨
+    gradient: 'from-green-500 to-green-600',
+    textColor: 'text-green-50',
+    href: 'https://line.me/...'
+  },
+  {
+    type: 'booking',
+    label: '体験予約',
+    icon: 'Calendar',
+    gradient: 'from-red-500 to-red-600',
+    textColor: 'text-red-50',
+    href: '/booking'
+  },
+  {
+    type: 'contact',
+    label: 'お問い合わせ',
+    icon: 'Mail',
+    gradient: 'from-gray-500 to-gray-600',
+    textColor: 'text-gray-50',
+    href: '/contact'
+  }
+] as const;
+```
+
+#### 完璧なフローティングバナーテンプレート
+```tsx
+// ✅ 推奨：フローティングバナー完全実装
+export const FloatingActions: React.FC = () => {
+  return (
+    <div className="fixed bottom-4 right-0 z-50 space-y-1">
+      {FLOATING_ACTIONS.map((action, index) => (
+        <a
+          key={action.type}
+          href={action.href}
+          className={`
+            flex flex-col items-center py-3 px-4 
+            bg-gradient-to-b ${action.gradient}
+            ${action.textColor} 
+            rounded-l-xl shadow-lg hover:shadow-xl
+            transition-all duration-300 transform 
+            hover:scale-105 hover:-translate-x-1
+            min-w-[80px]
+          `}
+        >
+          {/* アイコン（上） */}
+          <div className="mb-1">
+            {/* カスタムSVGアイコン推奨 */}
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              {/* アイコンパス */}
+            </svg>
+          </div>
+          
+          {/* テキスト（下） */}
+          <span className="text-xs font-medium text-center leading-tight">
+            {action.label}
+          </span>
+        </a>
+      ))}
+    </div>
+  );
+};
+```
+
+### 🎯 フローティングバナー実装チェックリスト（必須）
+
+#### 配置・表示確認項目
+```
+🚨 フローティングバナーの必須確認項目：
+□ fixed bottom-4 right-0 で画面右端に固定されているか
+□ right-0 で画面右端ピッタリに配置されているか
+□ z-50 で他要素より前面に表示されているか
+□ space-y-1 で縦間隔が最小化されているか
+□ rounded-l-xl で左側のみ角丸になっているか
+□ FV表示時点で即座に表示されているか（スクロール制御なし）
+□ 3つのアクション（LINE、予約、お問い合わせ）が適切に配置されているか
+□ 各バナーの色分けが明確になっているか（緑、赤、グレー）
+```
+
+#### レイアウト・デザイン確認項目
+```
+🚨 フローティングバナーレイアウトの必須確認項目：
+□ 縦並びレイアウト（flex flex-col）が実装されているか
+□ アイコンが上、テキストが下の配置になっているか
+□ items-center で中央揃えが適用されているか
+□ text-center でテキストが中央揃えになっているか
+□ 縦方向グラデーション（bg-gradient-to-b）が適用されているか
+□ ホバー効果（hover:scale-105, hover:-translate-x-1）が実装されているか
+□ min-w-[80px] で最小幅が確保されているか
+□ カスタムSVGアイコンが使用されているか
+```
+
+### 🚨 フローティングバナー修正履歴・学習事項
+
+#### 第1回修正：表示タイミング・位置調整
+- **問題**: スクロール制御により初期表示されない
+- **解決**: useState/useEffect削除でFV即座表示実現
+- **位置調整**: right-4-6px → right-0（画面右端ピッタリ）
+
+#### 第2回修正：レイアウト変更
+- **問題**: 横並びレイアウトの隙間・配置問題
+- **解決**: 縦並びレイアウト（flex-col）採用
+- **改善点**: space-y-1で間隔最小化、縦グラデーション採用
+
+#### 学習事項・今後の指針
+- **即座表示**: FV表示と同時のバナー表示が必須
+- **画面端配置**: right-0での完全右端配置が理想的
+- **縦レイアウト**: アイコン上・テキスト下の縦構成が最適
+- **ユーザビリティ**: 参考サイトのスクリーンショット活用が効果的
+
 ## デザインチェックリスト
 
 ### 必須確認項目
@@ -1756,3 +2229,192 @@ const imageCategories = {
 - [ ] **🏷️ カテゴリータブに絵文字・カードデザインが使用されていないか**（絶対禁止）
 - [ ] **カテゴリータブがシンプルな下線デザインになっているか**（border-b-2推奨）
 - [ ] **カフェらしい温かみと高級感が両立されているか**
+### 🚨 ジムHP専用チェック項目（gymnasiumプロジェクト）
+- [ ] **セクション見出しが英語表記になっているか**（ABOUT US, PROGRAMS, TRAINERS, FACILITIES, MEMBERSHIP等）
+- [ ] **HeroSectionでfont-serifが使用されているか**（明朝体フォント変更対応）
+- [ ] **「あなたの限界を超えていこう」等のメッセージが明朝体で表示されているか**
+- [ ] **プレミアムプランの黒光感デザインが実装されているか**（深い黒グラデーション）
+- [ ] **3プランの色分けが明確になっているか**（ベーシック：ブルー、スタンダード：レッド、プレミアム：黒）
+- [ ] **フローティングバナーが画面右端に正しく配置されているか**（right-0, FV即座表示）
+- [ ] **フローティングバナーが縦並びレイアウトになっているか**（アイコン上、テキスト下）
+- [ ] **LINE公式・体験予約・お問い合わせの3つのアクションが配置されているか**
+- [ ] **フローティングバナーの色分けが適切になっているか**（緑、赤、グレー）
+- [ ] **角丸四角形アイコン・絵文字が完全に削除されているか**（全セクション確認）
+- [ ] **高級感・重厚感のあるジムブランディングが実現されているか**
+- [ ] **トレーナー・施設・プログラム紹介が品格のあるデザインになっているか**
+- [ ] **Footer部分のチープなフローティングボタンが削除されているか**（オレンジ色ボタン禁止）
+- [ ] **ジムテーマに適したカラーパレットが使用されているか**
+- [ ] **全体的に高級プライベートジムの印象を与えているか**
+
+## 🖤 プレミアムプラン専用・黒光感デザインルール（必須）
+
+### プレミアムプランの高級感演出原則
+**プレミアムプラン（最高級）には黒を基調とした特別なデザインを適用し、他プランとの明確な差別化を図る**
+
+### 🚨 プレミアム専用カラーパレット（必須実装）
+
+#### メインカラー：深い黒のグラデーション
+```tsx
+// 🚨 必須：プレミアムプラン専用カラー定義
+const PREMIUM_COLORS = {
+  // 黒光グラデーション（メイン）
+  mainGradient: 'bg-gradient-to-r from-gray-900 via-black to-gray-900',
+  
+  // レイヤーオーバーレイ
+  layerOverlay: 'bg-gradient-to-r from-gray-800/20 via-transparent to-gray-800/20',
+  
+  // テキストグラデーション
+  textGradient: 'bg-gradient-to-r from-gray-100 to-gray-200 bg-clip-text text-transparent',
+  
+  // 境界線・装飾
+  border: 'border-gray-700 hover:border-gray-500',
+  
+  // シャドウ
+  shadow: 'shadow-2xl hover:shadow-3xl',
+  
+  // アクセント
+  accent: 'text-gray-300',
+  
+  // 高級装飾円
+  decoration: 'bg-gray-700/30'
+} as const;
+```
+
+#### プレミアムヘッダーデザインテンプレート
+```tsx
+// ✅ 推奨：プレミアムプラン黒光ヘッダー
+<div className="p-6 text-center bg-gradient-to-r from-gray-900 via-black to-gray-900 relative overflow-hidden">
+  {/* レイヤー効果（深みの演出） */}
+  <div className="absolute inset-0 bg-gradient-to-r from-gray-800/20 via-transparent to-gray-800/20"></div>
+  
+  {/* 装飾円（高級感アップ） */}
+  <div className="absolute top-4 right-4 w-32 h-32 bg-gray-700/30 rounded-full blur-3xl"></div>
+  <div className="absolute bottom-4 left-4 w-24 h-24 bg-gray-600/20 rounded-full blur-2xl"></div>
+  
+  {/* メインコンテンツ */}
+  <div className="relative z-10">
+    <h3 className="text-2xl font-bold text-white mb-2 tracking-wide">プレミアム</h3>
+    <div className="text-3xl font-bold bg-gradient-to-r from-gray-100 to-white bg-clip-text text-transparent mb-1 tracking-tight">
+      ¥18,800
+    </div>
+    <div className="text-gray-300 text-sm">月額</div>
+    <p className="text-gray-300 text-sm mt-2 font-medium">最高級のトレーニング体験</p>
+  </div>
+</div>
+```
+
+#### プレミアム機能項目デザイン
+```tsx
+// ✅ 推奨：プレミアム機能の表示スタイル
+<div className="p-4 text-center">
+  <span className="text-gray-800 font-bold bg-gradient-to-r from-gray-100 to-gray-200 bg-clip-text text-transparent border-b border-gray-800 pb-1">
+    {機能項目テキスト}
+  </span>
+</div>
+```
+
+#### プレミアムCTAボタンデザイン
+```tsx
+// ✅ 推奨：プレミアム専用CTAボタン
+<button className="w-full py-3 px-6 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 bg-gradient-to-r from-gray-900 via-black to-gray-900 text-white border border-gray-700 hover:border-gray-500 shadow-2xl hover:shadow-3xl relative overflow-hidden group">
+  {/* ホバー時の内部光沢効果 */}
+  <div className="absolute inset-0 bg-gradient-to-r from-gray-800/50 via-transparent to-gray-800/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+  
+  {/* 底部グラデーションライン */}
+  <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+  
+  {/* ボタンテキスト */}
+  <span className="relative z-10 tracking-wide group-hover:tracking-wider transition-all duration-300">
+    このプランを選ぶ
+  </span>
+</button>
+```
+
+### 🎯 プレミアムプラン実装チェックリスト（絶対必須）
+
+#### 黒光感ヘッダー確認項目
+```
+🚨 プレミアムヘッダーの必須確認項目：
+□ メイングラデーション（from-gray-900 via-black to-gray-900）が実装されているか
+□ レイヤーオーバーレイ効果が適切に配置されているか
+□ 装飾円が2つ適切に配置されているか（w-32 h-32, w-24 h-24）
+□ プラン名が tracking-wide で実装されているか
+□ 価格表示がグラデーションテキスト（from-gray-100 to-white）になっているか
+□ 説明文が text-gray-300 で統一されているか
+□ relative z-10 の階層構造が正しく実装されているか
+□ 全体的に高級感・重厚感が演出されているか
+```
+
+#### 機能項目スタイル確認項目
+```
+🚨 プレミアム機能項目の必須確認項目：
+□ テキストがグラデーション（from-gray-100 to-gray-200）になっているか
+□ bg-clip-text text-transparent が適用されているか
+□ 下線装飾（border-b border-gray-800）が実装されているか
+□ font-bold でフォントの太さが強調されているか
+□ 他プラン（ブルー・レッド）との明確な差別化ができているか
+□ 全体的に洗練された印象を与えているか
+```
+
+#### CTAボタン確認項目
+```
+🚨 プレミアムCTAボタンの必須確認項目：
+□ 黒光グラデーション背景（from-gray-900 via-black to-gray-900）が実装されているか
+□ 境界線（border-gray-700 hover:border-gray-500）が適切に設定されているか
+□ 多層シャドウ（shadow-2xl hover:shadow-3xl）が実装されているか
+□ ホバー時の内部光沢効果が実装されているか
+□ 底部グラデーションライン効果が実装されているか
+□ 文字のトラッキング変化（tracking-wide → tracking-wider）が実装されているか
+□ group クラスによるホバーアニメーションが正しく動作するか
+□ 全体的に最高級の印象を与えるデザインになっているか
+```
+
+### 🔄 プレミアムプラン色彩対比原則
+
+#### 3プラン色彩戦略
+```tsx
+// 🚨 必須：3プランの明確な色分け戦略
+const PLAN_COLORS = {
+  basic: {
+    name: 'ベーシック',
+    theme: 'ブルー系（信頼感・安定感）',
+    colors: {
+      header: 'bg-gradient-to-r from-blue-600 to-blue-700',
+      text: 'text-blue-600',
+      button: 'border-blue-600 text-blue-600 hover:bg-blue-600'
+    }
+  },
+  
+  standard: {
+    name: 'スタンダード',
+    theme: 'レッド系（人気・エネルギー）',
+    colors: {
+      header: 'bg-gradient-to-r from-red-600 to-red-700',
+      text: 'text-red-600',
+      button: 'bg-gradient-to-r from-red-600 to-red-700 text-white',
+      badge: '人気No.1'
+    }
+  },
+  
+  premium: {
+    name: 'プレミアム',
+    theme: '黒系（高級感・排他性）',
+    colors: {
+      header: 'bg-gradient-to-r from-gray-900 via-black to-gray-900',
+      text: 'text-gray-800 bg-gradient-to-r from-gray-100 to-gray-200 bg-clip-text text-transparent',
+      button: 'bg-gradient-to-r from-gray-900 via-black to-gray-900 text-white border-gray-700',
+      accent: 'text-gray-300'
+    }
+  }
+} as const;
+```
+
+### 🏆 プレミアムブランディング効果
+
+#### プレミアムプランの心理的効果
+- **排他性の演出**: 黒の重厚感で特別感を創出
+- **高級感の視覚化**: グラデーション・シャドウで品質の高さを表現
+- **信頼性の向上**: 洗練されたデザインで安心感を提供
+- **購買意欲の促進**: 他プランとの明確な差別化で価値を実感
+
+この黒光感デザインルールにより、プレミアムプランが他の2プラン（ブルー・レッド）と明確に差別化され、真の「最高級」としての印象を与えることができます。
