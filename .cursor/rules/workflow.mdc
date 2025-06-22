@@ -366,6 +366,11 @@ await mcp_supabase_generate_typescript_types({
    └─ デザイン原則の確認
    └─ コンポーネント設計
    └─ レスポンシブ対応計画
+
+3. 業種別カスタマイズ
+   └─ industry-references.mdcから適切な業種の参考サイトを確認
+   └─ 参考サイトのデザイン・機能・構成を分析
+   └─ 業種特有の要件・パターンを抽出
 ```
 
 ### Phase 3: 実装
@@ -485,6 +490,7 @@ await mcp_supabase_generate_typescript_types({
 **必ず実装前に `.cursor/rules/` の全ファイルを確認すること。**
 特に以下は見落としやすいので注意：
 - ui-design.mdc の「カードデザイン禁止」
+- industry-references.mdc の業種別参考サイト事例
 - 禁止ライブラリリスト
 - プロジェクト固有の命名規則
 - セキュリティ要件
