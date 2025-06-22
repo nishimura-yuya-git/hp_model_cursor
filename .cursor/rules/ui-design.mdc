@@ -14,7 +14,633 @@ alwaysApply: false
 - **チープな素材禁止**: 低品質な画像・アイコン・フォントは一切使用禁止
 - **Lucideアイコン使用絶対禁止**: Heroicons、Phosphor Icons、カスタムSVGを使用
 
-### カラーシステム（高級感重視）
+## 🖼️ FV（ファーストビュー）設計ルール（必須）
+
+### FVの基本原則
+- **画面領域の完全活用**: ビューポートの100vh（100%の高さ）を必ず使用
+- **インパクト重視**: 訪問者の注意を即座に引く強力なビジュアル
+- **メッセージの明確性**: 3秒以内にサイトの目的が理解できる構成
+- **高級感の演出**: プレミアムブランドにふさわしい洗練されたデザイン
+- **アクション誘導**: 明確なCTAボタンの配置
+
+### FV画像配置ルール
+
+#### 1. 画像サイズ・品質要件
+```css
+/* FV画像の必須要件 */
+.fv-image {
+  /* 画面全体をカバー */
+  width: 100vw;
+  height: 100vh;
+  
+  /* 高品質表示 */
+  object-fit: cover;
+  object-position: center center;
+  
+  /* WebP推奨、フォールバック対応 */
+  /* 最小解像度: 1920x1080px */
+  /* 推奨解像度: 2560x1440px以上 */
+}
+
+/* レスポンシブ画像対応 */
+.fv-image-responsive {
+  background-image: 
+    image-set(
+      url('/images/hero/hero-desktop-2560.webp') 2560w,
+      url('/images/hero/hero-desktop-1920.webp') 1920w,
+      url('/images/hero/hero-tablet-1024.webp') 1024w,
+      url('/images/hero/hero-mobile-768.webp') 768w
+    );
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+}
+```
+
+### 🎯 画面領域活用の鉄則
+
+#### 1. ビューポート100%活用の必須実装
+```css
+/* FVセクションの基本設定（必須） */
+.hero-section {
+  width: 100vw;
+  height: 100vh;
+  min-height: 100vh; /* フォールバック */
+  position: relative;
+  overflow: hidden;
+  
+  /* iOS Safari対応 */
+  height: 100dvh; /* Dynamic Viewport Height */
+  min-height: 100dvh;
+}
+
+/* モバイル対応（アドレスバー考慮） */
+@supports (height: 100dvh) {
+  .hero-section {
+    height: 100dvh;
+    min-height: 100dvh;
+  }
+}
+
+/* 安全領域対応（ノッチ等） */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .hero-section {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+```
+
+#### 2. レスポンシブ画面領域最適化
+```tsx
+// 画面サイズ別最適化コンポーネント
+interface ViewportOptimizedHeroProps {
+  children: React.ReactNode;
+  backgroundImage?: string;
+  overlayOpacity?: number;
+}
+
+export const ViewportOptimizedHero: React.FC<ViewportOptimizedHeroProps> = ({
+  children,
+  backgroundImage,
+  overlayOpacity = 0.4
+}) => {
+  return (
+    <section className="
+      w-screen h-screen
+      min-h-screen
+      relative overflow-hidden
+      flex items-center justify-center
+      
+      /* デバイス別最適化 */
+      xs:h-screen xs:min-h-screen
+      sm:h-screen sm:min-h-screen  
+      md:h-screen md:min-h-screen
+      lg:h-screen lg:min-h-screen
+      xl:h-screen xl:min-h-screen
+      2xl:h-screen 2xl:min-h-screen
+      
+      /* iOS Safari対応 */
+      supports-[height:100dvh]:h-[100dvh]
+      supports-[height:100dvh]:min-h-[100dvh]
+    ">
+      {/* 背景画像 */}
+      {backgroundImage && (
+        <div className="absolute inset-0 z-0">
+          <picture>
+            <source 
+              media="(min-width: 1920px)" 
+              srcSet={`${backgroundImage}-2560.webp`} 
+            />
+            <source 
+              media="(min-width: 1024px)" 
+              srcSet={`${backgroundImage}-1920.webp`} 
+            />
+            <source 
+              media="(min-width: 768px)" 
+              srcSet={`${backgroundImage}-1024.webp`} 
+            />
+            <img 
+              src={`${backgroundImage}-768.webp`}
+              alt="ヒーロー背景"
+              className="w-full h-full object-cover"
+              loading="eager"
+              decoding="async"
+            />
+          </picture>
+          
+          {/* オーバーレイ */}
+          <div 
+            className="absolute inset-0 bg-black"
+            style={{ opacity: overlayOpacity }}
+          />
+        </div>
+      )}
+      
+      {/* コンテンツ */}
+      <div className="relative z-10 w-full h-full">
+        {children}
+      </div>
+    </section>
+  );
+};
+```
+
+### 🖼️ 画像配置パターン（実践版）
+
+#### パターン1: フルスクリーン没入型
+```tsx
+// 画面全体を使った没入感のある配置
+export const HeroImmersive: React.FC = () => {
+  return (
+    <ViewportOptimizedHero backgroundImage="/images/hero/business-innovation">
+      <div className="h-full flex flex-col justify-center items-center text-center px-6 max-w-6xl mx-auto">
+        {/* 上部余白 */}
+        <div className="flex-1 min-h-[10vh]" />
+        
+        {/* メインコンテンツ */}
+        <div className="flex-2 flex flex-col justify-center space-y-8">
+          <h1 className="text-4xl md:text-6xl lg:text-8xl font-heading font-bold text-white leading-tight animate-fade-in">
+            <span className="block mb-4">未来を</span>
+            <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+              創造する
+            </span>
+          </h1>
+          
+          <p className="text-xl md:text-2xl lg:text-3xl text-white/90 max-w-4xl animate-fade-in animation-delay-200">
+            革新的なテクノロジーで、あなたのビジネスを次のステージへ
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-6 justify-center animate-fade-in animation-delay-400">
+            <Button variant="luxury" size="xl" className="min-w-[200px]">
+              今すぐ始める
+            </Button>
+            <Button variant="outline" size="xl" className="min-w-[200px] text-white border-white hover:bg-white hover:text-gray-900">
+              詳細を見る
+            </Button>
+          </div>
+        </div>
+        
+        {/* 下部余白 */}
+        <div className="flex-1 min-h-[10vh] flex items-end justify-center pb-8">
+          <div className="animate-bounce">
+            <div className="w-8 h-12 border-2 border-white rounded-full flex justify-center">
+              <div className="w-2 h-4 bg-white rounded-full mt-2 animate-pulse" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </ViewportOptimizedHero>
+  );
+};
+```
+
+#### パターン2: 黄金比分割レイアウト
+```tsx
+// 画面を黄金比で分割した美しいレイアウト
+export const HeroGoldenRatio: React.FC = () => {
+  return (
+    <section className="w-screen h-screen min-h-screen relative overflow-hidden">
+      <div className="h-full grid grid-cols-1 lg:grid-cols-5">
+        {/* 左側：テキストエリア（黄金比 3:5） */}
+        <div className="lg:col-span-3 bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900 flex items-center justify-center p-8 lg:p-16">
+          <div className="max-w-2xl space-y-8 text-white">
+            {/* プレタグ */}
+            <div className="inline-block px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-sm font-semibold border border-white/20">
+              ✨ 革新的ソリューション
+            </div>
+            
+            {/* メインヘッドライン */}
+            <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-heading font-bold leading-tight animate-slide-up">
+              ビジネスの
+              <span className="block mt-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                可能性を解放
+              </span>
+            </h1>
+            
+            {/* サブヘッドライン */}
+            <p className="text-lg md:text-xl lg:text-2xl text-white/80 leading-relaxed animate-fade-in animation-delay-200">
+              AIとデータサイエンスの力で、
+              あなたの組織に新たな価値を創造します
+            </p>
+            
+            {/* 特徴ポイント */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in animation-delay-300">
+              {[
+                { icon: '🚀', text: '10倍の効率化' },
+                { icon: '🔒', text: '企業級セキュリティ' },
+                { icon: '📊', text: 'リアルタイム分析' },
+                { icon: '🌐', text: 'グローバル展開' }
+              ].map((item, index) => (
+                <div key={index} className="flex items-center space-x-3 p-3 bg-white/5 backdrop-blur-sm rounded-lg border border-white/10">
+                  <span className="text-2xl">{item.icon}</span>
+                  <span className="font-medium">{item.text}</span>
+                </div>
+              ))}
+            </div>
+            
+            {/* CTAボタン */}
+            <div className="flex flex-col sm:flex-row gap-4 animate-fade-in animation-delay-500">
+              <Button variant="luxury" size="lg" className="min-w-[180px]">
+                無料トライアル
+              </Button>
+              <Button variant="ghost" size="lg" className="min-w-[180px] text-white hover:bg-white/10">
+                資料ダウンロード
+              </Button>
+            </div>
+          </div>
+        </div>
+        
+        {/* 右側：画像エリア（黄金比 2:5） */}
+        <div className="lg:col-span-2 relative">
+          <picture>
+            <source 
+              media="(min-width: 1024px)" 
+              srcSet="/images/hero/technology-dashboard-1024.webp" 
+            />
+            <img 
+              src="/images/hero/technology-dashboard-768.webp"
+              alt="テクノロジーダッシュボード"
+              className="w-full h-full object-cover"
+              loading="eager"
+            />
+          </picture>
+          
+          {/* 装飾的オーバーレイ */}
+          <div className="absolute inset-0 bg-gradient-to-l from-transparent via-blue-500/10 to-blue-900/30" />
+          
+          {/* フローティング要素 */}
+          <div className="absolute top-1/4 right-8 w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center animate-float">
+            <span className="text-2xl">💡</span>
+          </div>
+          <div className="absolute bottom-1/3 right-16 w-12 h-12 bg-white/15 backdrop-blur-sm rounded-full flex items-center justify-center animate-float animation-delay-700">
+            <span className="text-xl">⚡</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+```
+
+### ✍️ 文字配置最適化ルール
+
+#### 1. 階層構造の厳格な適用
+```tsx
+// 文字階層テンプレート（コピペ用）
+const TextHierarchyTemplate = {
+  // 最上位：ブランド・カテゴリー
+  overtitle: {
+    element: 'span',
+    classes: 'text-sm md:text-base font-semibold uppercase tracking-wider text-blue-600 mb-4 block',
+    maxLength: 20,
+    example: '革新的ソリューション'
+  },
+  
+  // 第1階層：メインメッセージ
+  headline: {
+    element: 'h1',
+    classes: 'text-4xl md:text-6xl lg:text-8xl font-heading font-bold leading-tight mb-6',
+    maxLength: 30,
+    example: '未来を創造する'
+  },
+  
+  // 第2階層：サブメッセージ
+  subheadline: {
+    element: 'h2',
+    classes: 'text-xl md:text-2xl lg:text-3xl font-medium leading-relaxed mb-8',
+    maxLength: 60,
+    example: 'AIとデータサイエンスの力で新たな価値を'
+  },
+  
+  // 第3階層：詳細説明
+  description: {
+    element: 'p',
+    classes: 'text-base md:text-lg lg:text-xl leading-relaxed mb-8',
+    maxLength: 120,
+    example: '最先端技術と人間中心の設計思想で、あなたのビジネスに革新をもたらします。'
+  },
+  
+  // 第4階層：アクション
+  cta: {
+    element: 'div',
+    classes: 'flex flex-col sm:flex-row gap-4 justify-center',
+    maxButtons: 2,
+    example: '今すぐ始める / 詳細を見る'
+  }
+};
+```
+
+#### 2. 読みやすさ最適化
+```css
+/* 文字間隔・行間の最適化 */
+.text-optimized {
+  /* 文字間隔 */
+  letter-spacing: -0.025em; /* 大見出し用 */
+  letter-spacing: 0.0125em;  /* 本文用 */
+  
+  /* 行間 */
+  line-height: 1.1;  /* 大見出し用 */
+  line-height: 1.4;  /* 小見出し用 */
+  line-height: 1.6;  /* 本文用 */
+  
+  /* 単語間隔 */
+  word-spacing: 0.125em;
+  
+  /* テキストレンダリング最適化 */
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* デバイス別フォントサイズ最適化 */
+@media (max-width: 640px) {
+  .responsive-text {
+    /* モバイル：読みやすさ重視 */
+    font-size: clamp(1.5rem, 8vw, 3rem);
+    line-height: 1.2;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .responsive-text {
+    /* タブレット：バランス重視 */
+    font-size: clamp(2rem, 6vw, 4rem);
+    line-height: 1.15;
+  }
+}
+
+@media (min-width: 1025px) {
+  .responsive-text {
+    /* デスクトップ：インパクト重視 */
+    font-size: clamp(3rem, 5vw, 6rem);
+    line-height: 1.1;
+  }
+}
+```
+
+#### 3. 配置パターンの使い分け
+```tsx
+// 左寄せ：力強い・主張的
+export const TextAlignmentLeft: React.FC = () => (
+  <div className="text-left max-w-4xl space-y-6">
+    <span className="text-blue-600 font-semibold uppercase tracking-wider text-sm">
+      革新的テクノロジー
+    </span>
+    <h1 className="text-5xl md:text-7xl font-heading font-bold text-gray-900 leading-tight">
+      ビジネスを
+      <span className="block text-blue-600">加速させる</span>
+    </h1>
+    <p className="text-xl text-gray-600 leading-relaxed max-w-2xl">
+      最先端のAI技術で、あなたの組織の可能性を最大化します
+    </p>
+  </div>
+);
+
+// 中央寄せ：バランス・安定感
+export const TextAlignmentCenter: React.FC = () => (
+  <div className="text-center max-w-4xl mx-auto space-y-6">
+    <span className="text-purple-600 font-semibold uppercase tracking-wider text-sm">
+      プレミアム体験
+    </span>
+    <h1 className="text-5xl md:text-7xl font-heading font-bold text-gray-900 leading-tight">
+      最高の
+      <span className="block bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+        パフォーマンス
+      </span>
+    </h1>
+    <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
+      洗練されたデザインと最先端技術の融合で、究極のユーザー体験を提供
+    </p>
+  </div>
+);
+
+// 右寄せ：エレガント・洗練
+export const TextAlignmentRight: React.FC = () => (
+  <div className="text-right max-w-4xl ml-auto space-y-6">
+    <span className="text-pink-600 font-semibold uppercase tracking-wider text-sm">
+      ラグジュアリー
+    </span>
+    <h1 className="text-5xl md:text-7xl font-heading font-bold text-gray-900 leading-tight">
+      <span className="block bg-gradient-to-l from-pink-600 to-purple-600 bg-clip-text text-transparent">
+        エレガンス
+      </span>
+      を極める
+    </h1>
+    <p className="text-xl text-gray-600 leading-relaxed max-w-2xl ml-auto">
+      細部まで磨き抜かれた美しさと機能性の完璧な調和
+    </p>
+  </div>
+);
+```
+
+### 🎨 プレースホルダー画像戦略
+
+#### 1. 開発フェーズ別画像戦略
+```typescript
+// 開発段階に応じたプレースホルダー戦略
+const PlaceholderStrategy = {
+  // フェーズ1: プロトタイプ・ワイヤーフレーム
+  prototype: {
+    service: 'https://via.placeholder.com',
+    format: 'simple',
+    example: 'https://via.placeholder.com/1920x1080/667eea/ffffff?text=Hero+Image',
+    purpose: 'レイアウト確認・構造検証'
+  },
+  
+  // フェーズ2: デザイン開発
+  design: {
+    service: 'https://source.unsplash.com',
+    format: 'curated',
+    example: 'https://source.unsplash.com/1920x1080/?business,technology',
+    purpose: '雰囲気確認・色調検証'
+  },
+  
+  // フェーズ3: 実装・テスト
+  implementation: {
+    service: 'https://picsum.photos',
+    format: 'realistic',
+    example: 'https://picsum.photos/1920/1080?random=1',
+    purpose: 'パフォーマンステスト・実装確認'
+  },
+  
+  // フェーズ4: 本番準備
+  production: {
+    service: 'custom',
+    format: 'optimized',
+    example: '/images/hero/hero-main.webp',
+    purpose: '最終品質・SEO最適化'
+  }
+};
+```
+
+#### 2. 業界別プレースホルダー画像
+```tsx
+// 業界・用途別のプレースホルダー生成
+export const generateIndustryPlaceholder = (
+  industry: 'business' | 'technology' | 'healthcare' | 'education' | 'finance',
+  size: { width: number; height: number } = { width: 1920, height: 1080 }
+) => {
+  const industryKeywords = {
+    business: 'business,office,professional,team,meeting,corporate',
+    technology: 'technology,innovation,digital,ai,data,software,computer',
+    healthcare: 'healthcare,medical,clean,care,professional,modern',
+    education: 'education,learning,knowledge,books,study,university',
+    finance: 'finance,banking,investment,growth,charts,professional'
+  };
+  
+  const gradientFallbacks = {
+    business: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+    technology: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+    healthcare: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+    education: 'linear-gradient(135deg, #dc2626 0%, #f59e0b 100%)',
+    finance: 'linear-gradient(135deg, #1f2937 0%, #374151 100%)'
+  };
+  
+  return {
+    unsplash: `https://source.unsplash.com/${size.width}x${size.height}/?${industryKeywords[industry]}`,
+    picsum: `https://picsum.photos/${size.width}/${size.height}?random=${industry}`,
+    gradient: gradientFallbacks[industry],
+    placeholder: `https://via.placeholder.com/${size.width}x${size.height}/667eea/ffffff?text=${industry.toUpperCase()}+Hero`
+  };
+};
+
+// 使用例
+const BusinessHeroPlaceholder: React.FC = () => {
+  const placeholders = generateIndustryPlaceholder('business');
+  
+  return (
+    <div className="w-full h-screen relative overflow-hidden">
+      {/* プライマリ画像（Unsplash） */}
+      <img 
+        src={placeholders.unsplash}
+        alt="ビジネス関連のプレースホルダー画像"
+        className="w-full h-full object-cover"
+        onError={(e) => {
+          // フォールバック：Picsum
+          e.currentTarget.src = placeholders.picsum;
+          e.currentTarget.onerror = () => {
+            // 最終フォールバック：グラデーション
+            e.currentTarget.style.display = 'none';
+            const parent = e.currentTarget.parentElement;
+            if (parent) {
+              parent.style.background = placeholders.gradient;
+            }
+          };
+        }}
+      />
+      
+      {/* オーバーレイ */}
+      <div className="absolute inset-0 bg-black/40" />
+      
+      {/* コンテンツ */}
+      <div className="absolute inset-0 flex items-center justify-center text-white">
+        <div className="text-center space-y-6">
+          <h1 className="text-6xl font-heading font-bold">
+            ビジネスの未来を
+            <span className="block text-blue-400">創造する</span>
+          </h1>
+          <p className="text-xl max-w-2xl">
+            革新的なソリューションで、あなたの組織に新たな価値を
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+```
+
+#### 3. 実画像への移行チェックリスト
+```markdown
+## 📋 プレースホルダーから実画像への移行チェックリスト
+
+### 準備段階
+- [ ] 画像要件の明確化（サイズ、形式、品質）
+- [ ] ブランドガイドラインの確認
+- [ ] 著作権・ライセンスの確認
+- [ ] 予算・スケジュールの確定
+
+### 制作段階
+- [ ] 複数解像度版の準備（2560px, 1920px, 1024px, 768px）
+- [ ] WebP形式での最適化
+- [ ] JPEGフォールバックの準備
+- [ ] ファイルサイズの最適化（モバイル500KB以下）
+
+### 実装段階
+- [ ] 画像パスの更新
+- [ ] alt属性の適切な設定
+- [ ] loading属性の設定（eager/lazy）
+- [ ] picture要素での複数フォーマット対応
+
+### 検証段階
+- [ ] 全デバイスでの表示確認
+- [ ] 読み込み速度の測定
+- [ ] SEO要素の確認
+- [ ] アクセシビリティの確認
+
+### 最適化段階
+- [ ] CDN配信の設定
+- [ ] キャッシュ戦略の実装
+- [ ] 遅延読み込みの最適化
+- [ ] Core Web Vitalsの測定
+```
+
+### 🎯 FV実装時の必須チェックリスト
+
+#### デザイン・レイアウト
+- [ ] 画面領域（100vh）を完全に活用しているか
+- [ ] 画像が高品質（WebP形式、適切な解像度）か
+- [ ] テキストが読みやすい（十分なコントラスト）か
+- [ ] レスポンシブ対応が適切か
+- [ ] アニメーションが滑らかで自然か
+- [ ] iOS Safari対応（100dvh使用）ができているか
+- [ ] 安全領域（ノッチ等）への対応ができているか
+
+#### コンテンツ・メッセージ
+- [ ] 3秒以内にサイトの目的が理解できるか
+- [ ] メインメッセージが明確で印象的か
+- [ ] 文字階層が適切に設定されているか
+- [ ] CTAボタンが目立つ位置にあるか
+- [ ] ブランドの個性が表現されているか
+- [ ] スクロール促進要素があるか
+
+#### 技術・パフォーマンス
+- [ ] 画像の読み込み速度が適切か（3秒以内）
+- [ ] Critical CSSが実装されているか
+- [ ] 画像の最適化が適切か
+- [ ] SEOタグが適切に設定されているか
+- [ ] プレースホルダーから実画像への移行準備ができているか
+
+#### アクセシビリティ
+- [ ] キーボードナビゲーションが可能か
+- [ ] スクリーンリーダー対応がされているか
+- [ ] カラーコントラストが適切か（WCAG AA準拠）
+- [ ] 動きを抑制する設定に対応しているか
+- [ ] alt属性が適切に設定されているか
+
+この包括的なFVルールにより、画面領域を最大限活用し、高品質な画像配置と最適化された文字配置を実現できます。プレースホルダー画像から実画像への段階的移行も効率的に行えます。
+
+## カラーシステム（高級感重視）
 
 ```css
 :root {
