@@ -1,0 +1,318 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 🗄️ データベース設計原則（拡張性・保守性重視）
+
+## 必須テーブル設計ルール
+
+### 1. 基本テーブル構造
+```sql
+-- ❌ 絶対禁止：直接関連テーブル
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  role_id UUID REFERENCES roles(id) -- NG: 直接参照
+);
+
+-- ✅ 必須：中間テーブル経由
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 中間テーブル必須設計
+CREATE TABLE user_roles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+  assigned_at TIMESTAMPTZ DEFAULT NOW(),
+  assigned_by UUID REFERENCES users(id),
+  expires_at TIMESTAMPTZ,
+  is_active BOOLEAN DEFAULT true,
+  metadata JSONB DEFAULT '{}',
+  UNIQUE(user_id, role_id)
+);
+```
+
+### 2. 必須フィールド規則
+```sql
+-- 全テーブル共通必須フィールド
+CREATE TABLE example_table (
+  -- 主キー（必須）
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  
+  -- 監査フィールド（必須）
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  created_by UUID REFERENCES users(id),
+  updated_by UUID REFERENCES users(id),
+  
+  -- 論理削除（必須）
+  deleted_at TIMESTAMPTZ,
+  deleted_by UUID REFERENCES users(id),
+  
+  -- バージョニング（楽観的ロック）
+  version INTEGER DEFAULT 1 NOT NULL,
+  
+  -- メタデータ（将来の拡張用）
+  metadata JSONB DEFAULT '{}',
+  
+  -- ビジネスフィールド
+  name TEXT NOT NULL,
+  description TEXT,
+  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'archived')),
+  
+  -- インデックス用フィールド
+  search_vector tsvector GENERATED ALWAYS AS (to_tsvector('japanese', coalesce(name, '') || ' ' || coalesce(description, ''))) STORED
+);
+
+-- 必須インデックス
+CREATE INDEX idx_example_table_created_at ON example_table(created_at);
+CREATE INDEX idx_example_table_status ON example_table(status) WHERE deleted_at IS NULL;
+CREATE INDEX idx_example_table_search ON example_table USING GIN(search_vector);
+CREATE INDEX idx_example_table_metadata ON example_table USING GIN(metadata);
+```
+
+### 3. 関連性管理テーブル（多対多の拡張可能設計）
+```sql
+-- ユーザーと組織の関連（拡張可能）
+CREATE TABLE user_organizations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  
+  -- 関係の詳細情報
+  role_type TEXT NOT NULL DEFAULT 'member' CHECK (role_type IN ('owner', 'admin', 'member', 'viewer')),
+  permissions JSONB DEFAULT '[]',
+  
+  -- 期間管理
+  started_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  ended_at TIMESTAMPTZ,
+  
+  -- 承認フロー
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'suspended', 'terminated')),
+  approved_by UUID REFERENCES users(id),
+  approved_at TIMESTAMPTZ,
+  
+  -- 監査
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  created_by UUID REFERENCES users(id),
+  updated_by UUID REFERENCES users(id),
+  
+  -- メタデータ（カスタム属性）
+  metadata JSONB DEFAULT '{}',
+  
+  UNIQUE(user_id, organization_id, started_at)
+);
+```
+
+### 4. 設定・マスターデータテーブル
+```sql
+-- システム設定（柔軟な設定管理）
+CREATE TABLE system_configurations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  category TEXT NOT NULL, -- 'auth', 'billing', 'ui', 'feature_flags'
+  key TEXT NOT NULL,
+  value JSONB NOT NULL,
+  data_type TEXT NOT NULL CHECK (data_type IN ('string', 'number', 'boolean', 'object', 'array')),
+  
+  -- 環境別設定
+  environment TEXT DEFAULT 'production' CHECK (environment IN ('development', 'staging', 'production')),
+  
+  -- アクセス制御
+  is_sensitive BOOLEAN DEFAULT false,
+  required_permission TEXT,
+  
+  -- バリデーション
+  validation_schema JSONB,
+  default_value JSONB,
+  
+  -- ライフサイクル
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  created_by UUID REFERENCES users(id),
+  updated_by UUID REFERENCES users(id),
+  
+  UNIQUE(category, key, environment)
+);
+```
+
+## RLS（Row Level Security）必須実装
+
+### 1. 基本的なRLSポリシー
+```sql
+-- 全テーブルでRLS有効化必須
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_organizations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
+
+-- ユーザー自身のデータアクセス
+CREATE POLICY "users_own_data" ON users
+  FOR ALL USING (auth.uid() = id);
+
+-- 組織メンバーのデータアクセス
+CREATE POLICY "organization_members" ON user_organizations
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM user_organizations uo
+      WHERE uo.user_id = auth.uid()
+      AND uo.organization_id = user_organizations.organization_id
+      AND uo.status = 'active'
+      AND (uo.ended_at IS NULL OR uo.ended_at > NOW())
+    )
+  );
+
+-- 管理者権限のポリシー
+CREATE POLICY "admin_access" ON users
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM user_roles ur
+      JOIN roles r ON ur.role_id = r.id
+      WHERE ur.user_id = auth.uid()
+      AND r.name = 'admin'
+      AND ur.is_active = true
+      AND (ur.expires_at IS NULL OR ur.expires_at > NOW())
+    )
+  );
+```
+
+### 2. 動的権限管理
+```sql
+-- 権限チェック関数
+CREATE OR REPLACE FUNCTION check_user_permission(
+  p_user_id UUID,
+  p_permission TEXT,
+  p_resource_id UUID DEFAULT NULL
+) RETURNS BOOLEAN AS $$
+DECLARE
+  has_permission BOOLEAN := false;
+BEGIN
+  -- グローバル権限チェック
+  SELECT EXISTS (
+    SELECT 1 FROM user_roles ur
+    JOIN roles r ON ur.role_id = r.id
+    JOIN role_permissions rp ON r.id = rp.role_id
+    JOIN permissions p ON rp.permission_id = p.id
+    WHERE ur.user_id = p_user_id
+    AND p.name = p_permission
+    AND ur.is_active = true
+    AND (ur.expires_at IS NULL OR ur.expires_at > NOW())
+  ) INTO has_permission;
+  
+  -- リソース固有の権限チェック
+  IF NOT has_permission AND p_resource_id IS NOT NULL THEN
+    SELECT EXISTS (
+      SELECT 1 FROM resource_permissions rp
+      WHERE rp.user_id = p_user_id
+      AND rp.resource_id = p_resource_id
+      AND rp.permission = p_permission
+      AND rp.is_active = true
+      AND (rp.expires_at IS NULL OR rp.expires_at > NOW())
+    ) INTO has_permission;
+  END IF;
+  
+  RETURN has_permission;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+## Supabase設定・最適化
+
+### 1. パフォーマンス最適化
+```sql
+-- 自動更新トリガー（updated_at）
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- トリガー適用例
+CREATE TRIGGER update_users_updated_at 
+    BEFORE UPDATE ON users 
+    FOR EACH ROW 
+    EXECUTE FUNCTION update_updated_at_column();
+```
+
+### 2. データ整合性制約
+```sql
+-- 複合制約の例
+ALTER TABLE user_organizations 
+ADD CONSTRAINT check_date_range 
+CHECK (started_at <= COALESCE(ended_at, '2099-12-31'::timestamptz));
+
+-- 条件付きユニーク制約
+CREATE UNIQUE INDEX idx_active_user_org 
+ON user_organizations (user_id, organization_id) 
+WHERE status = 'active' AND ended_at IS NULL;
+```
+
+### 3. 全文検索最適化
+```sql
+-- 日本語全文検索設定
+CREATE INDEX idx_posts_search_ja 
+ON posts USING GIN(to_tsvector('japanese', title || ' ' || content));
+
+-- 検索関数
+CREATE OR REPLACE FUNCTION search_posts(search_query TEXT)
+RETURNS TABLE(
+  id UUID,
+  title TEXT,
+  content TEXT,
+  rank REAL
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    p.id,
+    p.title,
+    p.content,
+    ts_rank(to_tsvector('japanese', p.title || ' ' || p.content), plainto_tsquery('japanese', search_query)) as rank
+  FROM posts p
+  WHERE to_tsvector('japanese', p.title || ' ' || p.content) @@ plainto_tsquery('japanese', search_query)
+  ORDER BY rank DESC;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+## マイグレーション管理
+
+### 1. マイグレーション命名規則
+```
+YYYYMMDDHHMMSS_descriptive_name.sql
+例: 20241201120000_add_user_organizations_table.sql
+```
+
+### 2. 安全なマイグレーション
+```sql
+-- トランザクション必須
+BEGIN;
+
+-- 新しいカラム追加（NULL許可）
+ALTER TABLE users ADD COLUMN phone TEXT;
+
+-- データ移行
+UPDATE users SET phone = metadata->>'phone' WHERE metadata->>'phone' IS NOT NULL;
+
+-- 制約追加（段階的）
+-- 1. NOT NULL制約は後で追加
+-- ALTER TABLE users ALTER COLUMN phone SET NOT NULL;
+
+COMMIT;
+```
+
+### 3. ロールバック戦略
+```sql
+-- 各マイグレーションにロールバック用SQL準備
+-- down_20241201120000_add_user_organizations_table.sql
+BEGIN;
+ALTER TABLE users DROP COLUMN IF EXISTS phone;
+COMMIT;
+```

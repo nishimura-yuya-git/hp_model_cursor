@@ -1,0 +1,321 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 🔄 システム開発ワークフロー（必須手順）
+
+## 開発要望受領時の必須ワークフロー
+
+### 1. 要望分析・システム判定
+```
+ユーザーからの要望 → システム要件かどうかの判定
+├── システム機能要望の場合 → 【必須】データベース設計フェーズへ
+├── UI/UXのみの場合 → フロントエンド実装フェーズへ
+└── 既存機能修正の場合 → 影響範囲分析 → 適切なフェーズへ
+```
+
+### 2. システム要望の場合の必須手順
+
+#### フェーズ1: データベース設計（最優先・必須）
+```
+1. 要件分析
+   ├── 必要なエンティティの特定
+   ├── エンティティ間の関係性分析
+   ├── データフロー設計
+   └── セキュリティ要件の洗い出し
+
+2. テーブル構造設計
+   ├── 主テーブルの設計
+   ├── 中間テーブルの設計（多対多関係）
+   ├── 必須フィールドの追加（created_at, updated_at, deleted_at等）
+   ├── インデックス戦略
+   └── 制約・バリデーション設計
+
+3. RLSポリシー設計
+   ├── アクセス権限の分析
+   ├── ユーザーロール別アクセス制御
+   ├── データレベルセキュリティ
+   └── 動的権限管理
+```
+
+#### フェーズ2: Supabase MCP実装（必須）
+```
+1. テーブル作成
+   ├── mcp_supabase_apply_migration でテーブル作成
+   ├── インデックス・制約の追加
+   └── テーブル関係性の設定
+
+2. RLSポリシー実装
+   ├── mcp_supabase_apply_migration でRLS有効化
+   ├── ユーザー権限ポリシーの実装
+   ├── データアクセス制御ポリシーの実装
+   └── 管理者権限ポリシーの実装
+
+3. 動作確認
+   ├── mcp_supabase_execute_sql でテストクエリ実行
+   ├── RLSポリシーの動作確認
+   └── セキュリティテスト
+```
+
+#### フェーズ3: フロントエンド実装
+```
+1. TypeScript型定義生成
+   ├── mcp_supabase_generate_typescript_types で型生成
+   └── 型定義ファイルの更新
+
+2. API層実装
+   ├── サービス層の実装
+   ├── カスタムフックの作成
+   └── エラーハンドリング
+
+3. UI/UXコンポーネント実装
+   ├── フォームコンポーネント
+   ├── 一覧表示コンポーネント
+   └── 詳細表示コンポーネント
+```
+
+## 具体的な実装例
+
+### システム要望例: "ユーザー管理機能"
+
+#### 1. データベース設計フェーズ
+```sql
+-- ユーザーテーブル設計
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL,
+  avatar_url TEXT,
+  phone TEXT,
+  bio TEXT,
+  
+  -- 必須フィールド
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  created_by UUID REFERENCES users(id),
+  updated_by UUID REFERENCES users(id),
+  deleted_at TIMESTAMPTZ,
+  deleted_by UUID REFERENCES users(id),
+  version INTEGER DEFAULT 1 NOT NULL,
+  metadata JSONB DEFAULT '{}',
+  
+  -- 検索用
+  search_vector tsvector GENERATED ALWAYS AS (
+    to_tsvector('japanese', coalesce(first_name, '') || ' ' || coalesce(last_name, '') || ' ' || coalesce(email, ''))
+  ) STORED
+);
+
+-- ロールテーブル
+CREATE TABLE roles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT UNIQUE NOT NULL,
+  description TEXT,
+  permissions JSONB DEFAULT '[]',
+  
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  created_by UUID REFERENCES users(id),
+  updated_by UUID REFERENCES users(id),
+  deleted_at TIMESTAMPTZ,
+  version INTEGER DEFAULT 1 NOT NULL,
+  metadata JSONB DEFAULT '{}'
+);
+
+-- ユーザーロール中間テーブル（拡張可能設計）
+CREATE TABLE user_roles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+  
+  -- 期間管理
+  started_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  ended_at TIMESTAMPTZ,
+  
+  -- 承認フロー
+  status TEXT DEFAULT 'active' CHECK (status IN ('pending', 'active', 'suspended', 'terminated')),
+  approved_by UUID REFERENCES users(id),
+  approved_at TIMESTAMPTZ,
+  
+  -- 監査
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  created_by UUID REFERENCES users(id),
+  updated_by UUID REFERENCES users(id),
+  metadata JSONB DEFAULT '{}',
+  
+  UNIQUE(user_id, role_id, started_at)
+);
+
+-- インデックス
+CREATE INDEX idx_users_email ON users(email) WHERE deleted_at IS NULL;
+CREATE INDEX idx_users_search ON users USING GIN(search_vector);
+CREATE INDEX idx_user_roles_active ON user_roles(user_id, role_id) 
+  WHERE status = 'active' AND ended_at IS NULL;
+```
+
+#### 2. RLSポリシー設計
+```sql
+-- RLS有効化
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
+-- ユーザー自身のデータアクセス
+CREATE POLICY "users_own_data" ON users
+  FOR ALL USING (auth.uid() = id);
+
+-- 管理者権限
+CREATE POLICY "admin_full_access" ON users
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM user_roles ur
+      JOIN roles r ON ur.role_id = r.id
+      WHERE ur.user_id = auth.uid()
+      AND r.name = 'admin'
+      AND ur.status = 'active'
+      AND (ur.ended_at IS NULL OR ur.ended_at > NOW())
+    )
+  );
+
+-- 組織内ユーザーの閲覧権限
+CREATE POLICY "organization_users_read" ON users
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM user_organizations uo1
+      JOIN user_organizations uo2 ON uo1.organization_id = uo2.organization_id
+      WHERE uo1.user_id = auth.uid()
+      AND uo2.user_id = users.id
+      AND uo1.status = 'active'
+      AND uo2.status = 'active'
+    )
+  );
+
+-- ロールアクセス制御
+CREATE POLICY "roles_admin_only" ON roles
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM user_roles ur
+      JOIN roles r ON ur.role_id = r.id
+      WHERE ur.user_id = auth.uid()
+      AND r.name IN ('admin', 'super_admin')
+      AND ur.status = 'active'
+    )
+  );
+```
+
+#### 3. Supabase MCP実装手順
+```typescript
+// 1. マイグレーション適用
+await mcp_supabase_apply_migration({
+  project_id: "your-project-id",
+  name: "create_user_management_tables",
+  query: `
+    -- 上記のCREATE TABLE文とインデックス
+  `
+});
+
+// 2. RLSポリシー適用
+await mcp_supabase_apply_migration({
+  project_id: "your-project-id", 
+  name: "setup_user_management_rls",
+  query: `
+    -- 上記のRLSポリシー設定
+  `
+});
+
+// 3. 動作確認
+await mcp_supabase_execute_sql({
+  project_id: "your-project-id",
+  query: "SELECT * FROM users LIMIT 1;"
+});
+
+// 4. TypeScript型生成
+await mcp_supabase_generate_typescript_types({
+  project_id: "your-project-id"
+});
+```
+
+## 必須チェックリスト
+
+### データベース設計完了確認
+- [ ] 全エンティティが特定されているか
+- [ ] 中間テーブルが適切に設計されているか
+- [ ] 必須フィールド（監査、論理削除等）が含まれているか
+- [ ] インデックス戦略が適切か
+- [ ] 制約・バリデーションが設定されているか
+- [ ] 全文検索が必要な場合、search_vectorが設定されているか
+
+### RLSポリシー設計完了確認
+- [ ] 全テーブルでRLSが有効化されているか
+- [ ] ユーザー自身のデータアクセスポリシーがあるか
+- [ ] 管理者権限ポリシーが設定されているか
+- [ ] 組織・グループレベルのアクセス制御があるか
+- [ ] セキュリティホールがないか
+- [ ] パフォーマンスを考慮したポリシー設計か
+
+### Supabase MCP実装完了確認
+- [ ] テーブル作成マイグレーションが成功したか
+- [ ] RLSポリシー設定マイグレーションが成功したか
+- [ ] テストクエリが正常に実行されるか
+- [ ] TypeScript型定義が生成されたか
+- [ ] セキュリティアドバイザーでエラーがないか
+
+## 開発フロー例外ルール
+
+### 例外1: 緊急性の高い修正
+```
+緊急バグ修正 → 既存構造への影響分析 → 最小限の変更で対応
+```
+
+### 例外2: UI/UXのみの変更
+```
+デザイン変更のみ → データベース変更なし → 直接フロントエンド実装
+```
+
+### 例外3: 設定・マスターデータの変更
+```
+設定値変更 → system_configurations テーブル更新 → 動作確認
+```
+
+## 品質保証
+
+### 必須テスト項目
+```
+1. データベーステスト
+   ├── マイグレーション成功確認
+   ├── RLSポリシー動作確認
+   ├── データ整合性確認
+   └── パフォーマンステスト
+
+2. セキュリティテスト
+   ├── 権限昇格テスト
+   ├── データ漏洩テスト
+   ├── SQLインジェクションテスト
+   └── 認証バイパステスト
+
+3. 統合テスト
+   ├── API動作確認
+   ├── フロントエンド連携確認
+   └── エラーハンドリング確認
+```
+
+## エラー時の対処法
+
+### データベース設計エラー
+```
+1. ロールバック用SQLの準備
+2. 段階的な修正実施
+3. データ整合性の再確認
+4. 影響範囲の再評価
+```
+
+### RLSポリシーエラー
+```
+1. ポリシーの一時無効化
+2. 権限マトリックスの再確認
+3. テストケースでの動作確認
+4. 段階的なポリシー適用
+```
+
+この包括的なワークフローにより、システム要望に対して常にデータベース設計を最優先とし、Supabase MCPを活用した確実な実装が保証されます。

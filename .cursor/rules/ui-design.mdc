@@ -1,0 +1,496 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 🎨 高級感重視のデザインシステム
+
+## デザイン原則
+
+### 高級感・プレミアム体験
+- **余白重視**: 臨場感のある豊富な余白（最低24px以上）
+- **魅力的なボタン**: 思わず押したくなる高級感のあるボタン設計
+- **カードデザイン禁止**: 自然で流れるようなレイアウト採用
+- **チープな素材禁止**: 低品質な画像・アイコン・フォントは一切使用禁止
+- **Lucideアイコン使用絶対禁止**: Heroicons、Phosphor Icons、カスタムSVGを使用
+
+### カラーシステム（高級感重視）
+
+```css
+:root {
+  /* プライマリカラー（深みのあるブルー系） */
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+  --color-primary-950: #172554;
+
+  /* セカンダリカラー（エレガントなパープル系） */
+  --color-secondary-50: #faf5ff;
+  --color-secondary-100: #f3e8ff;
+  --color-secondary-200: #e9d5ff;
+  --color-secondary-300: #d8b4fe;
+  --color-secondary-400: #c084fc;
+  --color-secondary-500: #a855f7;
+  --color-secondary-600: #9333ea;
+  --color-secondary-700: #7c3aed;
+  --color-secondary-800: #6b21a8;
+  --color-secondary-900: #581c87;
+  --color-secondary-950: #3b0764;
+
+  /* ニュートラルカラー（豊富なバリエーション） */
+  --color-neutral-0: #ffffff;
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f4f4f5;
+  --color-neutral-200: #e4e4e7;
+  --color-neutral-300: #d4d4d8;
+  --color-neutral-400: #a1a1aa;
+  --color-neutral-500: #71717a;
+  --color-neutral-600: #52525b;
+  --color-neutral-700: #3f3f46;
+  --color-neutral-800: #27272a;
+  --color-neutral-900: #18181b;
+  --color-neutral-950: #09090b;
+
+  /* プレミアムグラデーション */
+  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  --gradient-hero: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  --gradient-premium: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  --gradient-luxury: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+
+  /* 影・エフェクト */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  --shadow-premium: 0 32px 64px -12px rgb(59 130 246 / 0.25);
+  --shadow-luxury: 0 40px 80px -12px rgb(168 85 247 / 0.3);
+}
+```
+
+## タイポグラフィシステム
+
+### フォントファミリー
+```css
+/* プレミアムフォント必須 */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@400;500;600;700;800;900&display=swap');
+
+.font-heading {
+  font-family: 'Playfair Display', serif;
+  font-feature-settings: 'liga' on, 'calt' on;
+}
+
+.font-body {
+  font-family: 'Inter', sans-serif;
+  font-feature-settings: 'liga' on, 'calt' on, 'kern' on;
+}
+```
+
+### タイポグラフィスケール
+```css
+:root {
+  --font-size-xs: 0.75rem;     /* 12px */
+  --font-size-sm: 0.875rem;    /* 14px */
+  --font-size-base: 1rem;      /* 16px */
+  --font-size-lg: 1.125rem;    /* 18px */
+  --font-size-xl: 1.25rem;     /* 20px */
+  --font-size-2xl: 1.5rem;     /* 24px */
+  --font-size-3xl: 1.875rem;   /* 30px */
+  --font-size-4xl: 2.25rem;    /* 36px */
+  --font-size-5xl: 3rem;       /* 48px */
+  --font-size-6xl: 3.75rem;    /* 60px */
+  --font-size-7xl: 4.5rem;     /* 72px */
+  --font-size-8xl: 6rem;       /* 96px */
+  --font-size-9xl: 8rem;       /* 128px */
+}
+```
+
+## コンポーネント設計原則
+
+### ボタンデザイン（プレミアム）
+```tsx
+// src/components/ui/Button/Button.tsx
+interface ButtonProps {
+  variant: 'primary' | 'secondary' | 'outline' | 'ghost' | 'luxury';
+  size: 'sm' | 'md' | 'lg' | 'xl';
+  children: React.ReactNode;
+  disabled?: boolean;
+  loading?: boolean;
+  className?: string;
+  onClick?: () => void;
+}
+
+export const Button: React.FC<ButtonProps> = ({
+  variant = 'primary',
+  size = 'md',
+  children,
+  disabled = false,
+  loading = false,
+  className = '',
+  onClick
+}) => {
+  const baseClasses = `
+    relative inline-flex items-center justify-center font-semibold
+    transition-all duration-300 ease-in-out transform
+    focus:outline-none focus:ring-4 focus:ring-offset-2
+    disabled:opacity-50 disabled:cursor-not-allowed
+    hover:scale-105 active:scale-95
+  `;
+
+  const variantClasses = {
+    primary: `
+      bg-gradient-to-r from-blue-600 to-blue-700
+      hover:from-blue-700 hover:to-blue-800
+      text-white shadow-lg hover:shadow-xl
+      focus:ring-blue-500
+    `,
+    secondary: `
+      bg-gradient-to-r from-purple-600 to-purple-700
+      hover:from-purple-700 hover:to-purple-800
+      text-white shadow-lg hover:shadow-xl
+      focus:ring-purple-500
+    `,
+    outline: `
+      border-2 border-gray-300 bg-white
+      hover:border-gray-400 hover:bg-gray-50
+      text-gray-700 hover:text-gray-900
+      focus:ring-gray-500
+    `,
+    ghost: `
+      bg-transparent hover:bg-gray-100
+      text-gray-700 hover:text-gray-900
+      focus:ring-gray-500
+    `,
+    luxury: `
+      bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600
+      bg-size-200 animate-gradient-x
+      text-white shadow-luxury
+      hover:shadow-2xl focus:ring-purple-500
+    `
+  };
+
+  const sizeClasses = {
+    sm: 'px-4 py-2 text-sm rounded-lg',
+    md: 'px-6 py-3 text-base rounded-xl',
+    lg: 'px-8 py-4 text-lg rounded-xl',
+    xl: 'px-10 py-5 text-xl rounded-2xl'
+  };
+  return (
+    <button
+      className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+      disabled={disabled || loading}
+      onClick={onClick}
+    >
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+      <span className={loading ? 'opacity-0' : 'opacity-100'}>
+        {children}
+      </span>
+    </button>
+  );
+};
+```
+
+### 入力フィールド（高級感）
+```tsx
+// src/components/ui/Input/Input.tsx
+interface InputProps {
+  label?: string;
+  placeholder?: string;
+  type?: 'text' | 'email' | 'password' | 'number';
+  value?: string;
+  onChange?: (value: string) => void;
+  error?: string;
+  disabled?: boolean;
+  required?: boolean;
+  className?: string;
+}
+
+export const Input: React.FC<InputProps> = ({
+  label,
+  placeholder,
+  type = 'text',
+  value,
+  onChange,
+  error,
+  disabled = false,
+  required = false,
+  className = ''
+}) => {
+  return (
+    <div className={`space-y-2 ${className}`}>
+      {label && (
+        <label className="block text-sm font-medium text-gray-700">
+          {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+      )}
+      <div className="relative">
+        <input
+          type={type}
+          value={value}
+          onChange={(e) => onChange?.(e.target.value)}
+          placeholder={placeholder}
+          disabled={disabled}
+          className={`
+            w-full px-4 py-3 text-base
+            border-2 rounded-xl
+            transition-all duration-300 ease-in-out
+            focus:outline-none focus:ring-4 focus:ring-offset-1
+            disabled:opacity-50 disabled:cursor-not-allowed
+            ${error 
+              ? 'border-red-300 focus:border-red-500 focus:ring-red-200' 
+              : 'border-gray-300 focus:border-blue-500 focus:ring-blue-200'
+            }
+            ${!disabled && 'hover:border-gray-400'}
+            bg-white shadow-sm hover:shadow-md focus:shadow-lg
+          `}
+        />
+      </div>
+      {error && (
+        <p className="text-sm text-red-600 flex items-center space-x-1">
+          <span>⚠️</span>
+          <span>{error}</span>
+        </p>
+      )}
+    </div>
+  );
+};
+```
+
+## プレミアムアニメーション
+
+### アニメーション定義
+```css
+/* src/styles/animations.css */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes gradient-x {
+  0%, 100% {
+    background-size: 200% 200%;
+    background-position: left center;
+  }
+  50% {
+    background-size: 200% 200%;
+    background-position: right center;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse-soft {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* アニメーションクラス */
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.6s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.4s ease-out;
+}
+
+.animate-gradient-x {
+  animation: gradient-x 15s ease infinite;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+/* アニメーション遅延 */
+.animation-delay-100 { animation-delay: 100ms; }
+.animation-delay-200 { animation-delay: 200ms; }
+.animation-delay-300 { animation-delay: 300ms; }
+.animation-delay-500 { animation-delay: 500ms; }
+.animation-delay-700 { animation-delay: 700ms; }
+```
+
+## レスポンシブデザイン
+
+### ブレークポイント戦略
+```javascript
+// tailwind.config.js
+module.exports = {
+  theme: {
+    screens: {
+      'xs': '475px',
+      'sm': '640px',
+      'md': '768px',
+      'lg': '1024px',
+      'xl': '1280px',
+      '2xl': '1536px',
+      '3xl': '1920px',
+    },
+    extend: {
+      spacing: {
+        '18': '4.5rem',
+        '88': '22rem',
+        '128': '32rem',
+      },
+    },
+  },
+};
+```
+
+### レスポンシブレイアウト例
+```tsx
+// src/components/layout/Grid/Grid.tsx
+interface GridProps {
+  children: React.ReactNode;
+  cols?: {
+    xs?: number;
+    sm?: number;
+    md?: number;
+    lg?: number;
+    xl?: number;
+  };
+  gap?: number;
+  className?: string;
+}
+
+export const Grid: React.FC<GridProps> = ({
+  children,
+  cols = { xs: 1, sm: 2, md: 3, lg: 4, xl: 6 },
+  gap = 6,
+  className = ''
+}) => {
+  const gridClasses = `
+    grid gap-${gap}
+    grid-cols-${cols.xs || 1}
+    ${cols.sm ? `sm:grid-cols-${cols.sm}` : ''}
+    ${cols.md ? `md:grid-cols-${cols.md}` : ''}
+    ${cols.lg ? `lg:grid-cols-${cols.lg}` : ''}
+    ${cols.xl ? `xl:grid-cols-${cols.xl}` : ''}
+    ${className}
+  `;
+
+  return (
+    <div className={gridClasses}>
+      {children}
+    </div>
+  );
+};
+```
+
+## アクセシビリティ
+
+### フォーカス管理
+```css
+/* フォーカス管理 */
+*:focus {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+```
+
+### 高コントラストモード対応
+```css
+@media (prefers-contrast: high) {
+  :root {
+    --color-primary-500: #0056b3;
+    --color-neutral-700: #000000;
+    --color-neutral-300: #666666;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+```
+
+## デザインチェックリスト
+
+### 必須確認項目
+- [ ] 高級感のあるデザインが実装されているか
+- [ ] 十分な余白が確保されているか（24px以上推奨）
+- [ ] チープなアイコンが使用されていないか
+- [ ] プレミアムフォント（Inter, Playfair Display）が使用されているか
+- [ ] グラデーション・シャドウが品よく使用されているか
+- [ ] アニメーションが滑らかで自然か
+- [ ] レスポンシブデザインが適切に実装されているか
+- [ ] アクセシビリティ要件を満たしているか
+- [ ] ダークモード対応がされているか
+- [ ] カラーコントラストが適切か
+- [ ] タッチターゲットが44px以上か
+- [ ] ローディング状態が適切に表示されるか
