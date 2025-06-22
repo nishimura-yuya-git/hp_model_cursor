@@ -1,7 +1,7 @@
 ---
 description: 
 globs: 
-alwaysApply: false
+alwaysApply: true
 ---
 # 🗄️ データベース設計原則（拡張性・保守性重視）
 

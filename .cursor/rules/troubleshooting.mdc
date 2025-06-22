@@ -1,0 +1,278 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# 🔧 トラブルシューティング・エラー対策ガイド
+
+## 🚨 よくあるエラーと解決方法
+
+### 1. WebSocketエラー: `__WS_TOKEN__ is not defined`
+
+#### 原因
+- Viteの開発サーバーのWebSocket接続設定が不適切
+- ポート競合による接続不安定
+- ブラウザキャッシュの問題
+
+#### 解決手順
+```bash
+# 1. 開発サーバーを停止
+Ctrl+C
+
+# 2. キャッシュクリア
+rm -rf node_modules/.vite
+rm -rf dist
+
+# 3. 依存関係の再インストール
+rm -rf node_modules
+rm package-lock.json
+npm install
+
+# 4. 開発サーバー再起動
+npm run dev
+
+# 5. ブラウザの強制リロード
+# Chrome: Ctrl+Shift+R
+# Firefox: Ctrl+F5
+# Safari: Cmd+Shift+R
+```
+
+#### Vite設定修正
+```typescript
+// vite.config.ts
+export default defineConfig({
+  server: {
+    hmr: {
+      port: 24678, // 固定ポート使用
+      overlay: true
+    },
+    host: true,
+    strictPort: false
+  },
+  define: {
+    __WS_TOKEN__: JSON.stringify('dev-token')
+  }
+});
+```
+
+### 2. インポートエラー: モジュールが見つからない
+
+#### 原因
+- 禁止ライブラリ（lucide-react, @heroicons/react等）の使用
+- 依存関係の不整合
+
+#### 解決手順
+```bash
+# 1. 禁止ライブラリの確認
+grep -r "lucide-react" src/
+grep -r "@heroicons/react" src/
+grep -r "react-icons" src/
+
+# 2. 禁止ライブラリの削除
+npm uninstall lucide-react @heroicons/react react-icons
+
+# 3. カスタムアイコンの使用
+# src/components/ui/Icons.tsx を使用
+```
+
+### 3. 白い画面（React アプリが表示されない）
+
+#### 原因
+- JavaScriptエラーによるレンダリング停止
+- インポートエラー
+- 型エラー
+
+#### 解決手順
+```bash
+# 1. ブラウザの開発者ツールを開く
+F12
+
+# 2. Consoleタブでエラーを確認
+# 3. Networkタブで読み込み失敗を確認
+# 4. エラーメッセージに基づいて修正
+
+# 5. TypeScript型チェック
+npm run type-check
+
+# 6. ESLintチェック
+npm run lint
+```
+
+### 4. ビルドエラー
+
+#### 原因
+- TypeScript型エラー
+- 未使用のインポート
+- 設定ファイルの問題
+
+#### 解決手順
+```bash
+# 1. 型チェック
+npx tsc --noEmit
+
+# 2. 詳細ビルドエラー確認
+npm run build
+
+# 3. 未使用インポートの削除
+npm run lint:fix
+
+# 4. キャッシュクリア後再ビルド
+rm -rf dist
+npm run build
+```
+
+## 🚫 絶対使用禁止リスト
+
+### アイコンライブラリ
+```typescript
+// ❌ 絶対禁止
+import { Menu } from 'lucide-react';
+import { Bars3Icon } from '@heroicons/react/24/outline';
+import { FaBars } from 'react-icons/fa';
+
+// ✅ 推奨
+import { MenuIcon } from '@/components/ui/Icons';
+// または絵文字: ☰
+```
+
+### 重いライブラリ
+```typescript
+// ❌ 避けるべき
+import moment from 'moment';
+import lodash from 'lodash';
+import axios from 'axios';
+
+// ✅ 推奨
+import { format } from 'date-fns';
+// ネイティブfetch API使用
+```
+
+## 🔍 デバッグ手順
+
+### 1. エラー発生時の基本チェック
+```bash
+# パッケージの状態確認
+npm ls
+
+# 依存関係の問題確認
+npm audit
+
+# キャッシュクリア
+npm cache clean --force
+```
+
+### 2. 開発サーバーが起動しない場合
+```bash
+# ポート使用状況確認
+lsof -i :5173
+lsof -i :5174
+lsof -i :5175
+
+# プロセス終了
+kill -9 [PID]
+
+# 別ポートで起動
+npm run dev -- --port 3000
+```
+
+### 3. ブラウザ側のデバッグ
+```javascript
+// Console で実行
+// React DevTools 確認
+window.React
+
+// エラー詳細確認
+window.addEventListener('error', (e) => {
+  console.error('Global error:', e);
+});
+
+// 未処理のPromiseエラー確認
+window.addEventListener('unhandledrejection', (e) => {
+  console.error('Unhandled promise rejection:', e);
+});
+```
+
+## 📋 予防的チェックリスト
+
+### コード作成前
+- [ ] 禁止ライブラリリストを確認
+- [ ] 既存のカスタムアイコンを確認
+- [ ] TypeScript型定義を確認
+
+### コード作成後
+- [ ] ESLintエラーがないか確認
+- [ ] TypeScript型エラーがないか確認
+- [ ] 未使用のインポートがないか確認
+- [ ] ブラウザのコンソールエラーがないか確認
+
+### デプロイ前
+- [ ] `npm run build` が成功するか確認
+- [ ] 本番環境での動作確認
+- [ ] パフォーマンステスト実行
+
+## 🆘 緊急時対応コマンド
+
+### 完全リセット
+```bash
+# プロジェクト完全リセット
+rm -rf node_modules
+rm -rf .vite
+rm -rf dist
+rm package-lock.json
+npm install
+npm run dev
+```
+
+### 特定ライブラリの問題
+```bash
+# 特定パッケージの再インストール
+npm uninstall [package-name]
+npm install [package-name]
+```
+
+### キャッシュ問題
+```bash
+# 全キャッシュクリア
+npm cache clean --force
+rm -rf node_modules/.cache
+rm -rf ~/.npm
+```
+
+## 📞 サポート情報
+
+### エラー報告時に含める情報
+1. エラーメッセージの全文
+2. ブラウザの開発者ツールのスクリーンショット
+3. 実行したコマンド
+4. Node.js、npm のバージョン
+5. OS 情報
+
+### バージョン確認コマンド
+```bash
+node --version
+npm --version
+npx --version
+```
+
+## 🔄 定期メンテナンス
+
+### 週次チェック
+```bash
+# セキュリティ監査
+npm audit
+
+# 依存関係の更新確認
+npm outdated
+
+# 未使用パッケージの確認
+npx depcheck
+```
+
+### 月次チェック
+```bash
+# パッケージ更新
+npm update
+
+# セキュリティ脆弱性の修正
+npm audit fix
+```
