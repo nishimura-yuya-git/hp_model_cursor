@@ -2418,3 +2418,262 @@ const PLAN_COLORS = {
 - **購買意欲の促進**: 他プランとの明確な差別化で価値を実感
 
 この黒光感デザインルールにより、プレミアムプランが他の2プラン（ブルー・レッド）と明確に差別化され、真の「最高級」としての印象を与えることができます。
+### 🦷 歯科医院専用セクション見出しルール（必須）
+
+#### 歯科医院見出しの基本原則
+**歯科医院サイトの見出しは清潔感・安心感・専門性を表現し、患者の信頼を獲得する**
+
+#### 🚨 歯科医院専用英語見出し一覧（必須実装）
+```tsx
+// 🚨 必須：歯科医院セクション見出しの英語表記
+const DENTAL_SECTION_HEADINGS = {
+  // 診療理念・コンセプト
+  philosophy: "ORAL HEALTH PHILOSOPHY",      // ❌ 「診療理念」
+  concept: "DENTAL VISION",                  // ❌ 「コンセプト」
+  approach: "PATIENT-CENTERED APPROACH",     // ❌ 「アプローチ」
+  
+  // 診療内容・サービス
+  services: "COMPREHENSIVE DENTAL CARE",     // ❌ 「診療内容」
+  treatment: "ORAL TREATMENT",               // ❌ 「治療メニュー」
+  speciality: "SPECIALIZED DENTISTRY",       // ❌ 「専門治療」
+  prevention: "PREVENTIVE CARE",             // ❌ 「予防歯科」
+  
+  // 医師・スタッフ
+  team: "EXPERT DENTAL TEAM",               // ❌ 「スタッフ紹介」
+  doctors: "DENTAL PROFESSIONALS",          // ❌ 「医師紹介」
+  specialists: "ORAL HEALTH SPECIALISTS",   // ❌ 「専門医」
+  
+  // 設備・技術
+  facilities: "ADVANCED TECHNOLOGY",        // ❌ 「設備紹介」
+  equipment: "MODERN FACILITIES",           // ❌ 「医療機器」
+  digital: "DIGITAL DENTISTRY",             // ❌ 「デジタル歯科」
+  
+  // 予約・相談・アクセス
+  consultation: "DENTAL CONSULTATION",      // ❌ 「ご相談」
+  appointment: "APPOINTMENT & CONSULTATION", // ❌ 「予約」
+  access: "CLINIC ACCESS & INFO",           // ❌ 「アクセス」
+  contact: "PATIENT CARE",                  // ❌ 「お問い合わせ」
+} as const;
+```
+
+#### 🎨 歯科医院専用見出しデザインパターン
+
+#### パターン1: シンプルクリーンデザイン（推奨・現在実装済み）
+```tsx
+// ✅ 推奨：歯科医院シンプルクリーン見出し（実装済みパターン）
+export const DentalSectionHeadingClean: React.FC<{ title: string }> = ({ title }) => (
+  <div className="text-center mb-16">
+    {/* 上部装飾 - 自然なグラデーション */}
+    <div className="flex justify-center mb-4">
+      <div className="flex items-center space-x-1">
+        <div className="w-3 h-0.5 bg-gradient-to-r from-transparent to-teal-400 rounded-full"></div>
+        <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
+        <div className="w-8 h-0.5 bg-gradient-to-r from-teal-400 via-cyan-500 to-emerald-400 rounded-full"></div>
+        <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
+        <div className="w-3 h-0.5 bg-gradient-to-r from-emerald-400 to-transparent rounded-full"></div>
+      </div>
+    </div>
+    
+    {/* メイン見出し - グラデーションテキスト */}
+    <h2 className="text-lg font-bold tracking-[0.15em] text-transparent bg-gradient-to-r from-teal-700 via-cyan-600 to-emerald-600 bg-clip-text uppercase">
+      {title}
+    </h2>
+    
+    {/* 下部ライン - 光る効果 */}
+    <div className="mt-4 flex justify-center">
+      <div className="w-16 h-0.5 bg-gradient-to-r from-teal-300 via-cyan-400 to-emerald-300 rounded-full relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-teal-200 via-cyan-300 to-emerald-200 rounded-full blur-sm"></div>
+      </div>
+    </div>
+  </div>
+);
+```
+
+#### パターン2: メディカルプロフェッショナルデザイン
+```tsx
+// ✅ 推奨：歯科医院メディカル見出し（プロフェッショナル版）
+export const DentalSectionHeadingMedical: React.FC<{ title: string }> = ({ title }) => (
+  <div className="text-center mb-20">
+    {/* メディカルアイコン */}
+    <div className="relative inline-flex flex-col items-center mb-8">
+      <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-full flex items-center justify-center mb-4 shadow-lg">
+        {/* 歯科アイコン */}
+        <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2C8.69 2 6 4.69 6 8v8c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V8c0-3.31-2.69-6-6-6zm4 14H8V8c0-2.21 1.79-4 4-4s4 1.79 4 4v8z"/>
+        </svg>
+      </div>
+      
+      {/* メイン見出し */}
+      <h2 className="text-sm font-semibold tracking-[0.2em] text-teal-800 uppercase mb-2">
+        {title}
+      </h2>
+      
+      {/* メディカルライン */}
+      <div className="w-24 h-px bg-gradient-to-r from-transparent via-teal-400 to-transparent"></div>
+      
+      {/* パルス効果 */}
+      <div className="flex space-x-2 mt-4">
+        <div className="w-1 h-1 bg-teal-400 rounded-full animate-pulse"></div>
+        <div className="w-1.5 h-1.5 bg-cyan-500 rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
+        <div className="w-1 h-1 bg-emerald-400 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
+      </div>
+    </div>
+  </div>
+);
+```
+
+#### 🎯 歯科医院カラーパレット（ティール・シアン・エメラルド）
+
+#### 歯科医院専用カラー定義
+```tsx
+// 🚨 必須：歯科医院専用カラーパレット
+const DENTAL_COLORS = {
+  // メインカラー：ティール系（信頼感・清潔感）
+  primary: {
+    50: '#f0fdfa',
+    100: '#ccfbf1',
+    200: '#99f6e4',
+    300: '#5eead4',
+    400: '#2dd4bf',  // メインティール
+    500: '#14b8a6',
+    600: '#0d9488',
+    700: '#0f766e',  // 濃いティール
+    800: '#115e59',
+    900: '#134e4a',
+  },
+  
+  // セカンダリカラー：シアン系（清新感・先進性）
+  secondary: {
+    50: '#ecfeff',
+    100: '#cffafe',
+    200: '#a5f3fc',
+    300: '#67e8f9',
+    400: '#22d3ee',  // メインシアン
+    500: '#06b6d4',
+    600: '#0891b2',  // 濃いシアン
+    700: '#0e7490',
+    800: '#155e75',
+    900: '#164e63',
+  },
+  
+  // アクセントカラー：エメラルド系（自然・安心感）
+  accent: {
+    50: '#ecfdf5',
+    100: '#d1fae5',
+    200: '#a7f3d0',
+    300: '#6ee7b7',
+    400: '#34d399',  // メインエメラルド
+    500: '#10b981',
+    600: '#059669',  // 濃いエメラルド
+    700: '#047857',
+    800: '#065f46',
+    900: '#064e3b',
+  },
+  
+  // グラデーション定義
+  gradients: {
+    main: 'bg-gradient-to-r from-teal-700 via-cyan-600 to-emerald-600',
+    soft: 'bg-gradient-to-r from-teal-400 via-cyan-500 to-emerald-400',
+    light: 'bg-gradient-to-r from-teal-200 via-cyan-300 to-emerald-200',
+    text: 'text-transparent bg-gradient-to-r from-teal-700 via-cyan-600 to-emerald-600 bg-clip-text'
+  }
+} as const;
+```
+
+#### 🎨 歯科医院専用デザインシステム
+
+#### 装飾要素ライブラリ
+```tsx
+// 歯科医院専用装飾コンポーネント
+export const DentalDecorations = {
+  // 上部装飾ライン
+  topLine: (
+    <div className="flex items-center space-x-1">
+      <div className="w-3 h-0.5 bg-gradient-to-r from-transparent to-teal-400 rounded-full"></div>
+      <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
+      <div className="w-8 h-0.5 bg-gradient-to-r from-teal-400 via-cyan-500 to-emerald-400 rounded-full"></div>
+      <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
+      <div className="w-3 h-0.5 bg-gradient-to-r from-emerald-400 to-transparent rounded-full"></div>
+    </div>
+  ),
+  
+  // 光るライン
+  glowLine: (
+    <div className="w-16 h-0.5 bg-gradient-to-r from-teal-300 via-cyan-400 to-emerald-300 rounded-full relative">
+      <div className="absolute inset-0 bg-gradient-to-r from-teal-200 via-cyan-300 to-emerald-200 rounded-full blur-sm"></div>
+    </div>
+  ),
+  
+  // パルスドット
+  pulseDots: (
+    <div className="flex space-x-2">
+      <div className="w-1 h-1 bg-teal-400 rounded-full animate-pulse"></div>
+      <div className="w-1.5 h-1.5 bg-cyan-500 rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
+      <div className="w-1 h-1 bg-emerald-400 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
+    </div>
+  ),
+  
+  // 歯科アイコン
+  dentalIcon: (
+    <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M12 2C8.69 2 6 4.69 6 8v8c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V8c0-3.31-2.69-6-6-6zm4 14H8V8c0-2.21 1.79-4 4-4s4 1.79 4 4v8z"/>
+    </svg>
+  )
+} as const;
+```
+
+#### 🚨 歯科医院見出し実装チェックリスト（絶対必須）
+
+#### シンプルクリーンデザイン確認項目
+```
+🚨 歯科医院シンプル見出しの必須確認項目：
+□ セクション見出しが英語表記になっているか（DENTAL CONSULTATION等）
+□ 上部装飾ラインが正しく実装されているか（5つの要素配置）
+□ メイン見出しがグラデーションテキストになっているか（from-teal-700 via-cyan-600 to-emerald-600）
+□ text-transparent bg-clip-text が適用されているか
+□ tracking-[0.15em] でレタースペーシングが調整されているか
+□ 下部光るラインが実装されているか（blur-sm効果付き）
+□ ティール・シアン・エメラルドの3色グラデーションが統一されているか
+□ text-center mb-16 で適切なレイアウトになっているか
+□ 全体的に清潔感・安心感が演出されているか
+□ 他のセクション見出しと一貫性が保たれているか
+```
+
+#### メディカルプロフェッショナルデザイン確認項目
+```
+🚨 歯科医院メディカル見出しの必須確認項目：
+□ メディカルアイコンが適切に配置されているか（w-16 h-16円形背景）
+□ 歯科専用アイコン（SVG）が実装されているか
+□ グラデーション背景（from-teal-500 to-cyan-600）が実装されているか
+□ メディカルライン（透明グラデーション）が配置されているか
+□ パルス効果（3段階のアニメーション遅延）が実装されているか
+□ shadow-lg でアイコンに適度な影効果があるか
+□ 見出し全体の高さが適切（mb-20）に調整されているか
+□ プロフェッショナルな印象を与えているか
+```
+
+#### カラーパレット確認項目
+```
+🚨 歯科医院カラーパレットの必須確認項目：
+□ ティール系（teal-400, teal-500, teal-700）が基調色として使用されているか
+□ シアン系（cyan-500, cyan-600）がアクセントとして使用されているか
+□ エメラルド系（emerald-400, emerald-600）が補色として使用されているか
+□ 3色のグラデーション（from-teal via-cyan to-emerald）が統一されているか
+□ 従来のブルー単色系から変更されているか
+□ 清潔感・信頼感・専門性が視覚的に表現されているか
+□ 全セクションで一貫したカラーパレットが使用されているか
+```
+
+### 🦷 歯科医院ブランディング効果
+
+#### カラー心理学的効果
+- **ティール（主色）**: 信頼感・安定感・プロフェッショナリズム
+- **シアン（副色）**: 清潔感・先進性・革新性  
+- **エメラルド（accent）**: 自然・安心感・健康
+
+#### 患者への心理的効果
+- **安心感の醸成**: 清潔で信頼できる医療環境の印象
+- **専門性の表現**: 最新技術と専門知識を持つクリニックの印象
+- **親しみやすさ**: 堅すぎず、患者が相談しやすい雰囲気の創出
+
+この歯科医院専用見出しデザインルールにより、患者の信頼を獲得し、専門性と親しみやすさを両立した歯科クリニックサイトを実現できます。
