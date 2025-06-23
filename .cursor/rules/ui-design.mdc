@@ -2677,3 +2677,276 @@ export const DentalDecorations = {
 - **親しみやすさ**: 堅すぎず、患者が相談しやすい雰囲気の創出
 
 この歯科医院専用見出しデザインルールにより、患者の信頼を獲得し、専門性と親しみやすさを両立した歯科クリニックサイトを実現できます。
+
+## 💅 美容院専用デザインシステム（必須）
+
+### 美容院ブランディング原則
+**美容院サイトは上品さ・エレガンス・女性らしさを表現し、顧客の美への憧れを喚起する**
+
+### 🌸 美容院専用カラーパレット（必須実装）
+
+#### メインカラー：ローズ・ピンク・パープル系
+```tsx
+// 🚨 必須：美容院専用カラーパレット
+const BEAUTY_SALON_COLORS = {
+  // メインカラー：ローズ系（エレガンス・女性らしさ）
+  primary: {
+    50: '#fdf2f8',
+    100: '#fce7f3',
+    200: '#fbcfe8',
+    300: '#f9a8d4',
+    400: '#f472b6',  // メインローズ
+    500: '#ec4899',
+    600: '#db2777',
+    700: '#be185d',  // 濃いローズ
+    800: '#9d174d',
+    900: '#831843',
+  },
+  
+  // セカンダリカラー：ピンク系（優雅・温かみ）
+  secondary: {
+    50: '#fdf2f8',
+    100: '#fce7f3',
+    200: '#fbcfe8',
+    300: '#f9a8d4',
+    400: '#f472b6',
+    500: '#ec4899',  // メインピンク
+    600: '#db2777',
+    700: '#be185d',
+    800: '#9d174d',
+    900: '#831843',
+  },
+  
+  // アクセントカラー：パープル系（高級感・神秘性）
+  accent: {
+    50: '#faf5ff',
+    100: '#f3e8ff',
+    200: '#e9d5ff',
+    300: '#d8b4fe',
+    400: '#c084fc',  // メインパープル
+    500: '#a855f7',
+    600: '#9333ea',  // 濃いパープル
+    700: '#7c3aed',
+    800: '#6b21a8',
+    900: '#581c87',
+  },
+  
+  // グラデーション定義
+  gradients: {
+    main: 'bg-gradient-to-r from-rose-700 via-pink-600 to-purple-600',
+    soft: 'bg-gradient-to-r from-rose-400 via-pink-500 to-purple-400',
+    light: 'bg-gradient-to-r from-rose-200 via-pink-300 to-purple-200',
+    text: 'text-transparent bg-gradient-to-r from-rose-700 via-pink-600 to-purple-600 bg-clip-text'
+  }
+} as const;
+```
+
+### 🏷️ 美容院専用セクション見出しルール（必須）
+
+#### 美容院見出しの基本原則
+**美容院サイトの見出しは明朝体の美しさを活かし、装飾に頼らない上品なデザインを採用**
+
+#### 🚨 美容院専用英語見出し一覧（必須実装）
+```tsx
+// 🚨 必須：美容院セクション見出しの英語表記
+const BEAUTY_SALON_SECTION_HEADINGS = {
+  // 基本セクション
+  about: "ABOUT US",              // ❌ 「私たちについて」
+  services: "SERVICES",           // ❌ 「サービス」
+  menu: "BEAUTY MENU",            // ❌ 「メニュー」
+  gallery: "GALLERY",             // ❌ 「ギャラリー」
+  contact: "CONTACT",             // ❌ 「お問い合わせ」
+  
+  // 美容院専用セクション
+  concept: "BEAUTY CONCEPT",      // ❌ 「コンセプト」
+  stylist: "PROFESSIONAL STYLISTS", // ❌ 「スタイリスト」
+  treatment: "BEAUTY TREATMENT",   // ❌ 「トリートメント」
+  bridal: "BRIDAL BEAUTY",        // ❌ 「ブライダル」
+  access: "SALON ACCESS",         // ❌ 「アクセス」
+  reservation: "RESERVATION",     // ❌ 「ご予約」
+} as const;
+```
+
+#### 🎨 美容院専用見出しデザイン（明朝体・装飾なし）
+
+#### 現在実装済み：シンプル明朝体デザイン
+```tsx
+// ✅ 推奨：美容院専用見出し（現在実装済み・明朝体のみ）
+export const BeautySalonSectionHeading: React.FC<{ title: string; subtitle?: string; description?: string }> = ({ 
+  title, 
+  subtitle, 
+  description 
+}) => {
+  return (
+    <div className="text-center mb-16 animate-fade-in">
+      {/* 英語見出し - エレガントな明朝体 */}
+      <h3 className="font-playfair text-lg md:text-xl lg:text-2xl font-light tracking-[0.15em] text-rose-700 uppercase mb-3 relative">
+        {title}
+      </h3>
+      
+      {/* サブタイトル（日本語）- 美しい明朝体 */}
+      {subtitle && (
+        <h2 className="font-playfair text-3xl md:text-4xl lg:text-5xl font-normal text-gray-800 mb-6 leading-relaxed">
+          {subtitle}
+        </h2>
+      )}
+      
+      {/* 説明文 - 読みやすい明朝体 */}
+      {description && (
+        <p className="font-playfair text-base md:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed font-light">
+          {description}
+        </p>
+      )}
+    </div>
+  );
+};
+```
+
+#### 美容院見出しの特徴
+- **純粋な明朝体美**: Playfair Display フォントで上品さを演出
+- **装飾完全排除**: ライン・ドット・背景色等の装飾を一切使用しない
+- **文字の美しさ重視**: フォントの美しさとレタースペーシングに集中
+- **階層構造明確**: 英語見出し → 日本語サブタイトル → 説明文の順序
+
+### 🌸 美容院専用デザインパターン
+
+#### エレガントなサービスカード
+```tsx
+// ✅ 推奨：美容院サービスカード（装飾なし・明朝体）
+export const BeautyServiceCard: React.FC<{ service: BeautyService }> = ({ service }) => (
+  <div className="group relative overflow-hidden bg-white hover:bg-rose-50 transition-all duration-500 p-8 border-l-4 border-rose-200 hover:border-rose-400">
+    {/* サービス名 - 明朝体 */}
+    <h3 className="font-playfair text-2xl md:text-3xl font-normal text-gray-800 mb-4 group-hover:text-rose-700 transition-colors">
+      {service.name}
+    </h3>
+    
+    {/* 説明文 - 明朝体 */}
+    <p className="font-playfair text-base md:text-lg text-gray-600 leading-relaxed font-light mb-6">
+      {service.description}
+    </p>
+    
+    {/* 価格 - エレガント表示 */}
+    <div className="flex items-baseline space-x-2">
+      <span className="font-playfair text-2xl font-normal text-rose-700">
+        {service.price}
+      </span>
+      <span className="font-playfair text-sm text-gray-500 font-light">
+        ～
+      </span>
+    </div>
+  </div>
+);
+```
+
+#### 美容院専用ギャラリーレイアウト
+```tsx
+// ✅ 推奨：美容院ギャラリー（マソナリーレイアウト）
+export const BeautyGallery: React.FC = () => (
+  <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
+    {galleryImages.map((image, index) => (
+      <div key={index} className="break-inside-avoid group cursor-pointer">
+        <div className="relative overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-all duration-500">
+          <img
+            src={image.url}
+            alt={image.title}
+            className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="absolute bottom-4 left-4 text-white">
+              <h4 className="font-playfair text-lg font-normal">{image.title}</h4>
+              <p className="font-playfair text-sm font-light opacity-90">{image.category}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
+```
+
+### 🎯 美容院デザイン実装チェックリスト（絶対必須）
+
+#### 明朝体見出し確認項目
+```
+🚨 美容院見出しの必須確認項目：
+□ セクション見出しが英語表記になっているか（ABOUT US, SERVICES, GALLERY等）
+□ font-playfair が全見出し要素に適用されているか
+□ 装飾ライン・ドット・背景色が完全に削除されているか
+□ 英語見出しが text-rose-700 で統一されているか
+□ tracking-[0.15em] でレタースペーシングが調整されているか
+□ font-light, font-normal で適切なフォントウェイトが設定されているか
+□ サブタイトルが text-gray-800 で読みやすく表示されているか
+□ 説明文が text-gray-600 で適切なコントラストになっているか
+□ leading-relaxed で行間が美しく調整されているか
+□ 全体的に上品で洗練された印象を与えているか
+```
+
+#### カラーパレット確認項目
+```
+🚨 美容院カラーパレットの必須確認項目：
+□ ローズ系（rose-700, rose-400）が基調色として使用されているか
+□ ピンク系（pink-600, pink-500）がアクセントとして使用されているか
+□ パープル系（purple-600, purple-400）が補色として使用されているか
+□ 3色のグラデーション（from-rose via-pink to-purple）が統一されているか
+□ 従来のアンバー系から美容院らしいカラーに変更されているか
+□ 女性らしさ・エレガンスが視覚的に表現されているか
+□ 全セクションで一貫したカラーパレットが使用されているか
+```
+
+#### レイアウト・UX確認項目
+```
+🚨 美容院レイアウトの必須確認項目：
+□ カードデザインが排除され、自然な流れのレイアウトになっているか
+□ サービス紹介に border-l-4 の左ボーダーデザインが使用されているか
+□ ギャラリーにマソナリーレイアウト（columns-1 md:columns-2 lg:columns-3）が実装されているか
+□ ホバー効果が上品で控えめになっているか（hover:bg-rose-50等）
+□ 画像のズーム効果（group-hover:scale-105）が適切に実装されているか
+□ 全体的に美容院らしい優雅な印象を与えているか
+```
+
+### 🌸 美容院ブランディング効果
+
+#### カラー心理学的効果
+- **ローズ（主色）**: エレガンス・女性らしさ・上品さ
+- **ピンク（副色）**: 優雅・温かみ・親しみやすさ
+- **パープル（accent）**: 高級感・神秘性・創造性
+
+#### 顧客への心理的効果
+- **憧れの醸成**: 美しいデザインで理想の自分への憧れを喚起
+- **信頼感の構築**: 洗練されたデザインで技術力への信頼を獲得
+- **特別感の演出**: 高級感あるデザインで特別な体験への期待を創出
+
+### 🏷️ HP専用セクション見出しルール（必須）
+
+#### セクション見出しの英語化原則
+**主要セクションの見出しは英語で表記し、高級感・国際的な印象を演出する**
+
+#### 必須英語見出し一覧
+```tsx
+// 🚨 必須：セクション見出しの英語表記（カフェ・ジム・美容院共通）
+const SECTION_HEADINGS = {
+  // カフェHP用
+  about: "ABOUT US",           // ❌ 「私たちについて」
+  menu: "OUR MENU",           // ❌ 「メニュー」
+  location: "LOCATION",       // ❌ 「店舗情報」
+  contact: "CONTACT",         // ❌ 「お問い合わせ」
+  news: "NEWS",               // ❌ 「お知らせ」
+  gallery: "GALLERY",         // ❌ 「ギャラリー」
+  concept: "OUR CONCEPT",     // ❌ 「コンセプト」
+  access: "ACCESS",           // ❌ 「アクセス」
+  
+  // ジムHP用
+  programs: "PROGRAMS",       // ❌ 「プログラム」
+  trainers: "TRAINERS",       // ❌ 「トレーナー」
+  facilities: "FACILITIES",   // ❌ 「施設」
+  membership: "MEMBERSHIP",   // ❌ 「料金プラン」
+  
+  // 美容院HP用
+  services: "SERVICES",           // ❌ 「サービス」
+  stylist: "PROFESSIONAL STYLISTS", // ❌ 「スタイリスト」
+  treatment: "BEAUTY TREATMENT",   // ❌ 「トリートメント」
+  bridal: "BRIDAL BEAUTY",        // ❌ 「ブライダル」
+  reservation: "RESERVATION",     // ❌ 「ご予約」
+} as const;
+```
