@@ -1,0 +1,379 @@
+---
+alwaysApply: true
+---
+### 必須環境変数
+以下は「サーバー専用」。Vercel ダッシュボードの Project Settings → Environment Variables に設定する。
+
+```bash
+# サーバー専用（公開NG）
+SENDGRID_API_KEY=SG.xxxxx...    # Full Access 推奨ではなく "Mail Send" 最小権限の API Key を作成
+
+# 任意: 会社名・表示名（From の name に利用）
+VITE_COMPANY_NAME=SocialBoost
+```
+
+注意:
+- フロントの `.env` に API Key を置かないこと（漏洩リスク）。
+- 変更後は再デプロイが必要。
+
+フロント（Vite）側で使用する環境変数（`src/utils/resendApi.ts` が参照）:
+```bash
+# メールプロバイダ選択（sendgrid / resend）
+VITE_EMAIL_PROVIDER=sendgrid
+
+# 差出人・管理者・返信先（自動返信/管理者通知に利用）
+VITE_EMAIL_SENDER=no-reply@yourdomain.com
+VITE_ADMIN_EMAIL=admin@yourdomain.com
+VITE_REPLY_TO_EMAIL=support@yourdomain.com
+
+# 会社情報（自動返信テンプレの表示名/リンク）
+VITE_COMPANY_NAME=SocialBoost
+VITE_COMPANY_URL=https://yourdomain.com
+
+# 自動返信を開発中だけ止めたい場合
+VITE_DISABLE_USER_AUTOREPLY=false
+```
+
+---
+
+### 既存エンドポイントの仕様
+エンドポイント: `POST /api/sendgrid/emails`
+
+リクエスト（JSON）:
+```json
+{
+  "from": "no-reply@example.com",
+  "to": "user@example.com",
+  "subject": "件名",
+  "html": "<p>本文</p>",
+  "text": "本文のプレーンテキスト版(任意)",
+  "reply_to": "support@example.com"
+}
+```
+
+レスポンス:
+```json
+// 成功
+{ "success": true }
+
+// 失敗
+{ "error": "..." }
+```
+
+サーバー実装（抜粋・既存）:
+```javascript
+// api/sendgrid/emails.js
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, POST');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const apiKey = process.env.SENDGRID_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: 'SENDGRID_API_KEY is not configured' });
+
+  try {
+    const { from, to, subject, html, text, reply_to } = req.body || {};
+    if (!from || !to || !subject || (!html && !text)) {
+      return res.status(400).json({ error: 'Missing required parameters' });
+    }
+
+    const companyName = process.env.VITE_COMPANY_NAME || 'SocialBoost';
+    const fromHeader = from.includes('<') ? from : `${companyName} <${from}>`;
+
+    const payload = {
+      personalizations: [
+        {
+          to: Array.isArray(to) ? to.map((t) => ({ email: t })) : [{ email: to }],
+          subject,
+        },
+      ],
+      from: { email: fromHeader.match(/<(.+)>/)?.[1] || fromHeader, name: companyName },
+      reply_to: { email: reply_to || fromHeader.match(/<(.+)>/)?.[1] || fromHeader },
+      content: [ html ? { type: 'text/html', value: html } : { type: 'text/plain', value: text } ],
+    };
+
+    const sgRes = await fetch('https://api.sendgrid.com/v3/mail/send', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!sgRes.ok) {
+      const err = await sgRes.text();
+      return res.status(sgRes.status).json({ error: err });
+    }
+    res.status(200).json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message || 'Unknown error' });
+  }
+}
+```
+
+---
+
+### フロントからの呼び出し例（TypeScript）
+```ts
+// src/utils/sendgrid.ts
+export interface SendgridPayload {
+  from: string;
+  to: string | string[];
+  subject: string;
+  html?: string;
+  text?: string;
+  reply_to?: string;
+}
+
+export const sendMail = async (payload: SendgridPayload) => {
+  const res = await fetch('/api/sendgrid/emails', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error || 'メール送信に失敗しました');
+  return data as { success: true };
+};
+```
+
+使用例:
+```ts
+await sendMail({
+  from: 'no-reply@example.com',
+  to: 'user@example.com',
+  subject: 'お問い合わせありがとうございます',
+  html: '<p>受付しました。</p>',
+  reply_to: 'support@example.com'
+});
+```
+
+既存のフォームは `src/components/ContactForm.tsx` → `src/utils/resendApi.ts` の `sendContactEmail()` を呼び出す構造。上記の `VITE_EMAIL_PROVIDER=sendgrid` を設定すれば、そのまま SendGrid で送信される。
+
+---
+
+### cURL/テスト
+```bash
+curl -i -X POST \
+  -H 'Content-Type: application/json' \
+  -d '{
+        "from":"no-reply@example.com",
+        "to":"you@example.com",
+        "subject":"Test from SendGrid",
+        "html":"<strong>Hello</strong>"
+      }' \
+  https://<your-vercel-domain>/api/sendgrid/emails
+```
+
+---
+
+### よく使う拡張（任意）
+現在の実装に追加しやすいオプション項目。必要に応じて `payload` を拡張し、`fetch` 送信前にマージする。
+
+#### 1) Dynamic Template（推奨）
+SendGrid の「動的テンプレート」を使うと、本文をフロントから渡さずに API でテンプレートIDとデータのみ送れる。
+
+拡張ペイロード例:
+```json
+{
+  "template_id": "d-xxxxxxxxxxxxxxxxxxxxxxx",
+  "dynamic_template_data": { "userName": "山田太郎", "message": "お問い合わせ受付" }
+}
+```
+
+拡張コード例（差分イメージ）:
+```js
+// const { template_id, dynamic_template_data } = req.body || {};
+// if (template_id) {
+//   payload.template_id = template_id;
+//   if (dynamic_template_data) {
+//     payload.personalizations[0].dynamic_template_data = dynamic_template_data;
+//   }
+//   // テンプレ利用時は content は不要
+//   delete payload.content;
+// }
+```
+
+#### 2) 添付ファイル（小容量推奨）
+SendGrid は base64 添付に対応。サイズは 7MB 目安、できれば CDN/ダウンロードリンクにする。
+
+フロントで base64 化（例）:
+```ts
+const fileToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result).split(',')[1] || '');
+    fr.onerror = reject;
+    fr.readAsDataURL(file);
+  });
+
+const b64 = await fileToBase64(file);
+await fetch('/api/sendgrid/emails', {
+  method: 'POST', headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    from: 'no-reply@example.com', to: 'you@example.com', subject: '添付', html: '<p>添付あり</p>',
+    attachments: [{ content: b64, filename: file.name, type: file.type, disposition: 'attachment' }]
+  })
+});
+```
+
+サーバーでマージ（差分）:
+```js
+// const { attachments } = req.body || {};
+// if (attachments?.length) {
+//   payload.attachments = attachments;
+// }
+```
+
+#### 3) カテゴリ・トラッキング・サンドボックス
+```js
+// 例: 分析用カテゴリ、テスト用サンドボックス
+payload.categories = ['contact', 'production'];
+payload.mail_settings = { sandbox_mode: { enable: false } }; // true で実送信せず検証
+```
+
+#### 4) 重複送信防止（Idempotency）
+同一送信の二重実行を避けたい場合はヘッダでキーを渡す。
+```js
+await fetch('https://api.sendgrid.com/v3/mail/send', {
+  method: 'POST',
+  headers: {
+    Authorization: `Bearer ${apiKey}`,
+    'Content-Type': 'application/json',
+    'Idempotency-Key': req.headers['x-request-id'] || crypto.randomUUID()
+  },
+  body: JSON.stringify(payload)
+});
+```
+
+---
+
+### ローカル開発（/api を 404 にしないために）
+Vite の `npm run dev` だけでは Serverless 関数（/api/*）は動作しません。以下のいずれかで開発します。
+
+1) 推奨: Vercel CLI を使う
+```bash
+npm i -g vercel
+vercel login
+vercel dev   # http://localhost:3000 で /api/* が動作
+```
+Vite 側は `vite.config.ts` にプロキシ設定を追加（例）:
+```ts
+// vite.config.ts の server に追記
+server: {
+  proxy: {
+    '/api': 'http://localhost:3000'
+  }
+}
+```
+その上で `npm run dev`（Vite）と `vercel dev`（API）を並行起動します。`concurrently` を使うと便利です。
+
+2) あるいは、フロントから `fetch('http://localhost:3000/api/...')` とホストを明示しても可。
+
+---
+
+### Vercel ルーティング（`vercel.json` で /api を潰さない）
+`vercel.json` に catch-all の rewrite がある場合、API が index.html に書き換えられてしまうことがあります。先頭に `/api` を通すルールを追加してください。
+
+```json
+{
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
+```
+
+---
+
+### 配信品質・ドメイン認証
+本番運用では必ず Sender Authentication（SPF/DKIM）を構成する。
+- SendGrid Dashboard → Settings → Sender Authentication
+- Domain Authentication を有効化（CNAME を DNS 追加）
+- From ドメインを運用ドメインに統一
+
+---
+
+### CORS/セキュリティ
+- API Key は必ずサーバー側のみで使用する（フロント配布禁止）
+- 必要に応じて `Access-Control-Allow-Origin` を特定ドメインに限定
+- お問い合わせフォームには最低限のバリデーション + Bot 対策（hCaptcha/Cloudflare Turnstile 等）
+- レート制限をフロント側/サーバー側双方で（連打の抑止）
+
+---
+
+### エラーハンドリング
+送信エラー時は SendGrid が JSON あるいはプレーンテキストで詳細を返す。
+```js
+if (!sgRes.ok) {
+  const errText = await sgRes.text(); // { errors: [{ message, field, help }]} の場合あり
+  return res.status(sgRes.status).json({ error: errText });
+}
+```
+ログには個人情報を含めない。ユーザー向けメッセージは日本語で簡潔に。
+
+---
+
+### SDK を使う場合（参考・任意）
+HTTP直叩きではなく Node SDK を使いたい場合。
+```bash
+npm i @sendgrid/mail
+```
+```js
+// api/sendgrid/emails-sdk.js
+import sgMail from '@sendgrid/mail';
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  const { to, subject, html, from } = req.body || {};
+  try {
+    await sgMail.send({ to, from, subject, html });
+    res.status(200).json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e?.response?.body || e.message });
+  }
+}
+```
+
+---
+
+### クイックスタート（最短導入手順）
+1. SendGrid で API Key（権限: Mail Send）を作成し、Vercel に `SENDGRID_API_KEY` を設定
+2. プロジェクトに `.env.local` を作成し、`VITE_EMAIL_PROVIDER=sendgrid` と送信元/管理者メール等を設定
+3. `vercel dev` で API を起動、`npm run dev` の Vite からフォーム送信して確認
+4. ドメイン認証（SPF/DKIM）を完了し、本番にデプロイ
+5. 必要に応じてテンプレ/添付などの拡張を有効化
+
+---
+
+### テンプレ運用指針
+- 文面は SendGrid 側テンプレートに集約し、アプリでは `template_id` と `dynamic_template_data` のみを渡す
+- 多言語・A/B テストはテンプレートで管理
+- 共通パーツ（ヘッダー/フッター）はテンプレート・パーシャルで再利用
+
+---
+
+### チェックリスト
+- [ ] `SENDGRID_API_KEY` を Vercel に設定
+- [ ] 送信元ドメインの認証（SPF/DKIM）完了
+- [ ] フロントからの入力バリデーション実装
+- [ ] 迷惑メールにならない件名・本文・送信頻度
+- [ ] サンドボックスでの試験送信
+- [ ] 本番用テンプレートと差し替え
+
+---
+
+### トラブルシューティング
+- 401/403: API Key 権限・値を再確認
+- 400: リクエスト JSON の構造/必須項目不足、テンプレID不正など
+- 429: レート制限。再試行ポリシー（指数バックオフ）を導入
+- 5xx: 時間をおいて再試行、SendGrid ステータスを確認
+
+---
+description:
+globs:
+alwaysApply: false
+---
