@@ -1,0 +1,6 @@
+- Vite + React 18 + TypeScript、Tailwind CSS、React Router DOM
+- Lenis（@studio-freight/lenis）でスムーススクロール
+- ESLint + TypeScript ESLint構成、`npm run lint`でチェック
+- npm scripts: `npm run dev`（Vite Dev Server）、`npm run build`、`npm run preview`
+- SendGrid/Resend連携を想定したメールAPIが`api/sendgrid/emails.js`として存在
+- srcはコンポーネント・pages構成、Tailwindユーティリティスタイルと高級感デザインルールに従う
