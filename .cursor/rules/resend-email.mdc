@@ -16,7 +16,8 @@ alwaysApply: false
 project/
 ├── api/
 │   └── resend/
-│       └── emails.js          # Vercel Serverless Function
+│       └── emails.js          # Vercel Serverless Function（本番環境用）
+├── dev-api-server.js           # 開発環境用APIサーバー（ローカル開発時のみ）
 ├── src/
 │   ├── utils/
 │   │   └── resendApi.ts       # フロントエンド用API
@@ -25,6 +26,7 @@ project/
 │   └── hooks/
 │       └── useContactForm.ts  # カスタムフック
 ├── vercel.json                # Vercel設定
+├── vite.config.ts             # Vite設定（プロキシ設定含む）
 └── .env.local                 # 環境変数
 ```
 
@@ -46,11 +48,16 @@ VITE_COMPANY_NAME=Your Company Name
 VITE_COMPANY_URL=https://yourdomain.com
 ```
 
-## 🚀 2. Vercel Serverless Function
+## 🚀 2. Vercel Serverless Function（本番環境用）
 
 ### api/resend/emails.js
 ```javascript
-import fetch from 'node-fetch';
+"use strict";
+
+// @ts-nocheck
+
+// Vercel Serverless Functions用のResend APIプロキシ
+// Vercelの最新Node.jsランタイムでは標準のfetchが利用可能
 
 export default async (req, res) => {
   // CORS設定
@@ -116,7 +123,7 @@ export default async (req, res) => {
         .trim();
     }
 
-    // Resend API呼び出し
+    // Resend API呼び出し（標準のfetchを使用）
     const resendResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -126,7 +133,18 @@ export default async (req, res) => {
       body: JSON.stringify(emailParams)
     });
 
-    const data = await resendResponse.json();
+    const responseText = await resendResponse.text();
+    let data;
+    
+    try {
+      data = JSON.parse(responseText);
+    } catch (error) {
+      console.error('レスポンスのJSONパースに失敗:', error);
+      return res.status(500).json({
+        error: 'Invalid JSON response from Resend API',
+        responseText: responseText.substring(0, 200)
+      });
+    }
 
     if (!resendResponse.ok) {
       console.error('Resend API error:', data);
@@ -138,10 +156,164 @@ export default async (req, res) => {
   } catch (error) {
     console.error('Email sending error:', error);
     return res.status(500).json({ 
-      error: error.message 
+      error: error.message,
+      stack: error.stack
     });
   }
 };
+```
+
+## 🔧 2-1. 開発環境用APIサーバー（ローカル開発時のみ）
+
+### ⚠️ 重要な問題と解決方法
+
+**問題：**
+- Viteの開発サーバー（`npm run dev`）では、`api/`ディレクトリのServerless Functionが動作しない
+- `/api/resend/emails`へのリクエストが404エラーになる
+- 開発環境でメール送信機能をテストできない
+
+**解決方法：**
+開発用の簡易APIサーバーを作成し、Viteのプロキシ設定で`/api`リクエストを転送する
+
+### dev-api-server.js
+```javascript
+// 開発環境用の簡易APIサーバー
+// Viteのプロキシ経由で動作します
+
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+
+// 環境変数を読み込み
+dotenv.config({ path: '.env.local' });
+
+const app = express();
+const PORT = 3000;
+
+// CORS設定
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true
+}));
+
+// JSONボディパーサー
+app.use(express.json());
+
+// Resend APIプロキシエンドポイント
+app.post('/api/resend/emails', async (req, res) => {
+  try {
+    const apiKey = process.env.VITE_RESEND_API_KEY || process.env.RESEND_API_KEY;
+    
+    if (!apiKey) {
+      console.error('Resend API Keyが設定されていません');
+      return res.status(500).json({ error: 'API key not configured' });
+    }
+
+    const { from, to, subject, html, text, reply_to } = req.body;
+
+    // 必須パラメータのチェック
+    if (!from || !to || !subject || (!html && !text)) {
+      return res.status(400).json({ error: 'Missing required parameters' });
+    }
+
+    // 送信者名の最適化
+    let optimizedFrom = from;
+    if (from.indexOf('<') === -1 && from.indexOf('@') !== -1) {
+      const companyName = process.env.VITE_COMPANY_NAME || 'Your Company';
+      optimizedFrom = `${companyName} <${from}>`;
+    }
+
+    // メールパラメータ
+    const emailParams = {
+      from: optimizedFrom,
+      to,
+      subject,
+      reply_to: reply_to || from,
+    };
+
+    if (html) emailParams.html = html;
+    if (text) {
+      emailParams.text = text;
+    } else if (html) {
+      emailParams.text = html
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<p[^>]*>/gi, '\n')
+        .replace(/<li[^>]*>/gi, '\n- ')
+        .replace(/<\/li>/gi, '')
+        .replace(/<\/p>/gi, '\n')
+        .replace(/<[^>]*>/g, '')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+    }
+
+    // Resend APIにリクエスト（標準のfetchを使用）
+    const resendResponse = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify(emailParams)
+    });
+
+    const responseText = await resendResponse.text();
+    let data;
+    
+    try {
+      data = JSON.parse(responseText);
+    } catch (error) {
+      return res.status(500).json({
+        error: 'Invalid JSON response from Resend API',
+        responseText: responseText.substring(0, 200)
+      });
+    }
+
+    if (!resendResponse.ok) {
+      return res.status(resendResponse.status).json(data);
+    }
+
+    return res.status(200).json(data);
+
+  } catch (error) {
+    console.error('メール送信中のエラー:', error);
+    return res.status(500).json({ 
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`開発用APIサーバーが起動しました: http://localhost:${PORT}`);
+  console.log(`APIエンドポイント: http://localhost:${PORT}/api/resend/emails`);
+});
+```
+
+### vite.config.ts（プロキシ設定追加）
+```typescript
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  optimizeDeps: {
+    exclude: ['lucide-react'],
+  },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        configure: (proxy, _options) => {
+          proxy.on('error', (err, _req, _res) => {
+            console.log('プロキシエラー:', err);
+          });
+        },
+      },
+    },
+  },
+})
 ```
 
 ## 🎯 3. フロントエンド API ユーティリティ
@@ -844,22 +1016,30 @@ export const useContactForm = (): UseContactFormReturn => {
 {
   "name": "resend-email-project",
   "version": "1.0.0",
+  "type": "module",
   "dependencies": {
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "node-fetch": "^3.3.0"
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@types/react": "^18.3.5",
     "@types/node": "^22.9.0",
+    "@types/express": "^5.0.5",
+    "@types/cors": "^2.8.19",
     "typescript": "^5.5.3",
     "vite": "^5.4.2",
     "tailwindcss": "^3.4.0",
     "autoprefixer": "^10.4.16",
-    "postcss": "^8.4.32"
+    "postcss": "^8.4.32",
+    "express": "^5.1.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "concurrently": "^9.2.1"
   },
   "scripts": {
     "dev": "vite",
+    "dev:api": "node dev-api-server.js",
+    "dev:all": "concurrently \"npm run dev\" \"npm run dev:api\"",
     "build": "vite build",
     "preview": "vite preview"
   }
@@ -870,11 +1050,11 @@ export const useContactForm = (): UseContactFormReturn => {
 
 ### 1. 依存関係インストール
 ```bash
-# 必要なパッケージをインストール
-npm install node-fetch
+# 開発用APIサーバーに必要なパッケージをインストール
+npm install --save-dev express cors dotenv concurrently
 
-# 開発依存関係（TypeScript使用時）
-npm install -D @types/node
+# 型定義をインストール（TypeScript使用時）
+npm install --save-dev @types/express @types/cors @types/node
 ```
 
 ### 2. Resendアカウント設定
@@ -901,13 +1081,34 @@ VITE_ADMIN_EMAIL=admin@yourdomain.com
 ```
 
 ### 4. 開発サーバー起動
-```bash
-# 開発サーバー起動
-npm run dev
 
-# 本番ビルド
+#### 方法1: 両方のサーバーを同時に起動（推奨）
+```bash
+# Vite開発サーバーとAPIサーバーを同時に起動
+npm run dev:all
+```
+
+これで以下が同時に起動します：
+- Vite開発サーバー（`http://localhost:5173`）
+- 開発用APIサーバー（`http://localhost:3000`）
+
+#### 方法2: 別々のターミナルで起動
+**ターミナル1:**
+```bash
+npm run dev
+```
+
+**ターミナル2:**
+```bash
+npm run dev:api
+```
+
+#### 本番ビルド
+```bash
 npm run build
 ```
+
+**注意：** `dev-api-server.js`は開発環境専用です。本番環境ではVercel Serverless Function（`api/resend/emails.js`）が自動的に使用されます。
 
 ### 5. Vercelデプロイ
 ```bash
@@ -1006,6 +1207,42 @@ Email sending failed
 - 送信者アドレスが認証済みドメインのものか確認
 - Resend APIの制限を確認（無料プランの場合）
 
+#### 5. 開発環境で404エラー（`/api/resend/emails`）
+```
+POST http://localhost:5173/api/resend/emails 404 (Not Found)
+```
+**原因：**
+- Viteの開発サーバーでは`api/`ディレクトリのServerless Functionが動作しない
+- 開発用APIサーバーが起動していない
+
+**解決方法：**
+1. `dev-api-server.js`がプロジェクトルートに存在するか確認
+2. `npm run dev:all`で両方のサーバーを起動
+3. または、別々のターミナルで`npm run dev`と`npm run dev:api`を実行
+4. `vite.config.ts`にプロキシ設定が追加されているか確認
+
+#### 6. 開発用APIサーバーが起動しない
+```
+Error: Cannot find module 'express'
+```
+**解決方法：**
+```bash
+# 必要なパッケージをインストール
+npm install --save-dev express cors dotenv concurrently
+npm install --save-dev @types/express @types/cors
+```
+
+#### 7. プロキシエラー
+```
+プロキシエラー: connect ECONNREFUSED 127.0.0.1:3000
+```
+**原因：**
+- 開発用APIサーバー（`localhost:3000`）が起動していない
+
+**解決方法：**
+- `npm run dev:api`でAPIサーバーを起動
+- または`npm run dev:all`で両方を同時に起動
+
 ## 🎯 10. 実装チェックリスト
 
 ### 必須確認項目
@@ -1014,12 +1251,16 @@ Email sending failed
 □ Resendアカウントが作成され、ドメインが認証されているか
 □ 環境変数（RESEND_API_KEY等）が正しく設定されているか
 □ api/resend/emails.js がVercel Functionsとして動作するか
+□ dev-api-server.js が開発環境用に作成されているか
+□ vite.config.ts にプロキシ設定が追加されているか
+□ package.json に dev:api と dev:all スクリプトが追加されているか
 □ CORS設定が適切に行われているか
 □ お問い合わせフォームが正常に動作するか
 □ 自動返信メールが送信されるか
 □ 管理者通知メールが送信されるか
 □ エラーハンドリングが適切に実装されているか
 □ レスポンシブデザインが適用されているか
+□ 開発環境でのテストが完了しているか
 □ 本番環境でのテストが完了しているか
 
 🚨 セキュリティ確認項目：
@@ -1029,5 +1270,72 @@ Email sending failed
 □ XSS対策が施されているか
 □ 送信制限（レート制限）が考慮されているか
 ```
+
+## 📝 11. 開発環境での動作の仕組み
+
+### アーキテクチャ概要
+
+```
+開発環境（npm run dev:all）:
+┌─────────────────┐
+│ ブラウザ        │
+│ localhost:5173  │
+└────────┬────────┘
+         │ /api/resend/emails
+         ▼
+┌─────────────────┐
+│ Vite Dev Server │
+│ localhost:5173  │
+│ (プロキシ)      │
+└────────┬────────┘
+         │ プロキシ転送
+         ▼
+┌─────────────────┐
+│ 開発用APIサーバー│
+│ localhost:3000  │
+│ dev-api-server  │
+└────────┬────────┘
+         │ Resend API
+         ▼
+┌─────────────────┐
+│ Resend API      │
+│ api.resend.com  │
+└─────────────────┘
+
+本番環境（Vercel）:
+┌─────────────────┐
+│ ブラウザ        │
+│ yourdomain.com  │
+└────────┬────────┘
+         │ /api/resend/emails
+         ▼
+┌─────────────────┐
+│ Vercel          │
+│ Serverless Func │
+│ api/resend/     │
+│ emails.js       │
+└────────┬────────┘
+         │ Resend API
+         ▼
+┌─────────────────┐
+│ Resend API      │
+│ api.resend.com  │
+└─────────────────┘
+```
+
+### 開発環境での動作フロー
+
+1. **フロントエンド**（`src/utils/resendApi.ts`）が`/api/resend/emails`にリクエスト
+2. **Viteプロキシ**（`vite.config.ts`）が`localhost:3000`に転送
+3. **開発用APIサーバー**（`dev-api-server.js`）がリクエストを受信
+4. **Resend API**に実際のメール送信リクエストを転送
+5. レスポンスをフロントエンドに返却
+
+### 本番環境での動作フロー
+
+1. **フロントエンド**が`/api/resend/emails`にリクエスト
+2. **Vercel**が`api/resend/emails.js`（Serverless Function）を実行
+3. **Resend API**にメール送信リクエスト
+4. レスポンスをフロントエンドに返却
 
 このマニュアルに従って実装すれば、Resendを使用した完全なメール送信機能が構築できます。
