@@ -7,7 +7,11 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit",
+    "type-check:watch": "tsc --noEmit --watch",
+    "check:forbidden-libs": "bash scripts/check-forbidden-libs.sh",
+    "security:audit": "npm audit --audit-level=moderate"
   },
   "dependencies": {
     "react": "^18.3.1",

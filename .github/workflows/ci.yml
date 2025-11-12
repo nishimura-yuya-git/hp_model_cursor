@@ -1,0 +1,172 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # コード品質チェック
+  quality-check:
+    name: コード品質チェック
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+        
+      - name: Node.js セットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: 依存関係のインストール
+        run: npm ci
+        
+      - name: TypeScript型チェック
+        run: npm run type-check
+        
+      - name: ESLintチェック
+        run: npm run lint
+        
+      - name: 禁止ライブラリチェック
+        run: npm run check:forbidden-libs
+
+  # ビルドチェック
+  build:
+    name: ビルドチェック
+    runs-on: ubuntu-latest
+    needs: quality-check
+    
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+        
+      - name: Node.js セットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: 依存関係のインストール
+        run: npm ci
+        
+      - name: プロダクションビルド
+        run: npm run build
+        
+      - name: ビルド成果物の確認
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "❌ エラー: distディレクトリが生成されませんでした"
+            exit 1
+          fi
+          
+          if [ -z "$(ls -A dist)" ]; then
+            echo "❌ エラー: distディレクトリが空です"
+            exit 1
+          fi
+          
+          echo "✅ ビルド成果物が正常に生成されました"
+
+  # セキュリティ監査
+  security-audit:
+    name: セキュリティ監査
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+        
+      - name: Node.js セットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: 依存関係のインストール
+        run: npm ci
+        
+      - name: npm監査（脆弱性チェック）
+        run: |
+          echo "🔒 セキュリティ監査を実行中..."
+          npm audit --audit-level=moderate || true
+          
+      - name: 環境変数のハードコーディングチェック
+        run: |
+          echo "🔒 環境変数のハードコーディングをチェック中..."
+          SENSITIVE_PATTERNS=(
+            "SUPABASE_SERVICE_ROLE_KEY"
+            "STRIPE_SECRET_KEY"
+            "SENDGRID_API_KEY"
+            "RESEND_API_KEY"
+            "JWT_SECRET"
+            "API_KEY"
+            "SECRET"
+            "PASSWORD"
+            "TOKEN"
+          )
+          
+          VIOLATIONS=0
+          for pattern in "${SENSITIVE_PATTERNS[@]}"; do
+            # 環境変数定義ファイル（.env.example等）は除外
+            if grep -r "$pattern" src/ --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" | grep -v "import.meta.env" | grep -v "process.env" | grep -v ".env.example" | grep -v ".env.local.example"; then
+              echo "⚠️  警告: 機密情報のハードコーディングの可能性があります: $pattern"
+              VIOLATIONS=$((VIOLATIONS + 1))
+            fi
+          done
+          
+          if [ $VIOLATIONS -gt 0 ]; then
+            echo "⚠️  機密情報のハードコーディングが $VIOLATIONS 件検出されました（警告のみ）"
+          else
+            echo "✅ 機密情報のハードコーディングは検出されませんでした"
+          fi
+
+  # コードスタイルチェック（将来的にPrettier追加時）
+  # style-check:
+  #   name: コードスタイルチェック
+  #   runs-on: ubuntu-latest
+  #   
+  #   steps:
+  #     - name: リポジトリをチェックアウト
+  #       uses: actions/checkout@v4
+  #       
+  #     - name: Node.js セットアップ
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: '18'
+  #         cache: 'npm'
+  #         
+  #     - name: 依存関係のインストール
+  #       run: npm ci
+  #       
+  #     - name: Prettierチェック
+  #       run: npm run format:check
+
+  # テスト（将来的にテスト追加時）
+  # test:
+  #   name: テスト実行
+  #   runs-on: ubuntu-latest
+  #   
+  #   steps:
+  #     - name: リポジトリをチェックアウト
+  #       uses: actions/checkout@v4
+  #       
+  #     - name: Node.js セットアップ
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: '18'
+  #         cache: 'npm'
+  #         
+  #     - name: 依存関係のインストール
+  #       run: npm ci
+  #       
+  #     - name: ユニットテスト実行
+  #       run: npm run test:coverage
+  #       
+  #     - name: カバレッジレポートのアップロード
+  #       uses: codecov/codecov-action@v3
+  #       with:
+  #         file: ./coverage/lcov.info
+
