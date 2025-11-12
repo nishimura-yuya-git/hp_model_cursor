@@ -32,7 +32,9 @@ jobs:
         run: npm run lint
         
       - name: 禁止ライブラリチェック
-        run: npm run check:forbidden-libs
+        run: |
+          chmod +x scripts/check-forbidden-libs.sh
+          npm run check:forbidden-libs
 
   # ビルドチェック
   build:

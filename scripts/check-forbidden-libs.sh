@@ -3,7 +3,8 @@
 # 禁止ライブラリチェックスクリプト（シェル版）
 # .cursor/rules/core.mdc の禁止ライブラリリストに基づいてチェック
 
-set -e
+# set -e をコメントアウト（エラーハンドリングを明示的に行うため）
+# set -e
 
 FORBIDDEN_LIBS=(
   "lucide-react"
@@ -48,25 +49,41 @@ if [ -d "src" ]; then
     # インポート文をチェック
     ESCAPED_LIB=$(echo "$lib" | sed 's/[.*+?^${}()|[\]\\]/\\&/g')
     
-    # import文のチェック
-    if find src -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \) \
-      -exec grep -l "from ['\"]$ESCAPED_LIB['\"]" {} \; 2>/dev/null | grep -v node_modules | grep -v ".vite" | head -1 > /dev/null; then
+    # import文のチェック（node_modules、.vite、dist、buildを除外）
+    FOUND_FILES=$(find src -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \) \
+      ! -path "*/node_modules/*" \
+      ! -path "*/.vite/*" \
+      ! -path "*/dist/*" \
+      ! -path "*/build/*" \
+      ! -path "*/.git/*" \
+      -exec grep -l "from ['\"]$ESCAPED_LIB['\"]" {} \; 2>/dev/null || true)
+    
+    if [ -n "$FOUND_FILES" ]; then
       echo "❌ エラー: 禁止ライブラリ '$lib' がインポートされています"
-      find src -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \) \
-        -exec grep -l "from ['\"]$ESCAPED_LIB['\"]" {} \; 2>/dev/null | grep -v node_modules | grep -v ".vite" | while read -r file; do
-        echo "   ファイル: $file"
+      echo "$FOUND_FILES" | while read -r file; do
+        if [ -n "$file" ]; then
+          echo "   ファイル: $file"
+        fi
       done
       VIOLATIONS=$((VIOLATIONS + 1))
       TOTAL_VIOLATIONS=$((TOTAL_VIOLATIONS + 1))
     fi
     
-    # require文のチェック
-    if find src -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \) \
-      -exec grep -l "require(['\"]$ESCAPED_LIB['\"])" {} \; 2>/dev/null | grep -v node_modules | grep -v ".vite" | head -1 > /dev/null; then
+    # require文のチェック（node_modules、.vite、dist、buildを除外）
+    FOUND_FILES=$(find src -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \) \
+      ! -path "*/node_modules/*" \
+      ! -path "*/.vite/*" \
+      ! -path "*/dist/*" \
+      ! -path "*/build/*" \
+      ! -path "*/.git/*" \
+      -exec grep -l "require(['\"]$ESCAPED_LIB['\"])" {} \; 2>/dev/null || true)
+    
+    if [ -n "$FOUND_FILES" ]; then
       echo "❌ エラー: 禁止ライブラリ '$lib' がrequireされています"
-      find src -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \) \
-        -exec grep -l "require(['\"]$ESCAPED_LIB['\"])" {} \; 2>/dev/null | grep -v node_modules | grep -v ".vite" | while read -r file; do
-        echo "   ファイル: $file"
+      echo "$FOUND_FILES" | while read -r file; do
+        if [ -n "$file" ]; then
+          echo "   ファイル: $file"
+        fi
       done
       VIOLATIONS=$((VIOLATIONS + 1))
       TOTAL_VIOLATIONS=$((TOTAL_VIOLATIONS + 1))
