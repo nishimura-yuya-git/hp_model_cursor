@@ -1952,6 +1952,159 @@ export const Grid: React.FC<GridProps> = ({
 }
 ```
 
+## 🔒 スクロール固定化制御（必須実装）
+
+### スクロール固定化の基本原則
+**サイトを上にスクロールしたときに最上部を超えて白い背景の部分が表示されないように、スクロール位置を固定化する**
+
+### 🚨 スクロール固定化の必須実装
+
+#### CSS設定（`src/index.css`）
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ベースフォント設定 */
+html,
+body {
+  font-family: "こぶりなゴシック W3 JIS2004", system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+}
+
+/* 🚨 必須：スクロール固定化のCSS設定 */
+html {
+  overflow-x: hidden;
+  overscroll-behavior-y: none;
+  overscroll-behavior-x: none;
+}
+
+body {
+  @apply antialiased text-[14px] text-gray-900;
+  overflow-x: hidden;
+  overscroll-behavior-y: none;
+  overscroll-behavior-x: none;
+}
+```
+
+#### JavaScript制御（`src/App.tsx`）
+```tsx
+import React, { useEffect } from 'react'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { Header } from './components/layout/Header'
+import { Footer } from './components/layout/Footer'
+// ... その他のインポート
+
+function App() {
+  useEffect(() => {
+    // 🚨 必須：スクロール位置を監視して、最上部を超えないように制御
+    const handleScroll = () => {
+      if (window.scrollY < 0) {
+        window.scrollTo(0, 0)
+      }
+    }
+
+    // スクロールイベントリスナーを追加
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    
+    // リサイズ時にもチェック
+    const handleResize = () => {
+      if (window.scrollY < 0) {
+        window.scrollTo(0, 0)
+      }
+    }
+    
+    window.addEventListener('resize', handleResize)
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [])
+
+  return (
+    <BrowserRouter>
+      {/* 🚨 必須：メインコンテナに overflow-x-hidden を追加 */}
+      <div className="min-h-screen bg-white overflow-x-hidden">
+        <Header />
+        <main>
+          <Routes>
+            {/* ルート設定 */}
+          </Routes>
+        </main>
+        <Footer />
+      </div>
+    </BrowserRouter>
+  )
+}
+
+export default App
+```
+
+### 🎯 スクロール固定化実装チェックリスト（必須）
+
+#### CSS設定確認項目
+```
+🚨 スクロール固定化CSSの必須確認項目：
+□ html要素に overflow-x: hidden が設定されているか
+□ html要素に overscroll-behavior-y: none が設定されているか
+□ html要素に overscroll-behavior-x: none が設定されているか
+□ body要素に overflow-x: hidden が設定されているか
+□ body要素に overscroll-behavior-y: none が設定されているか
+□ body要素に overscroll-behavior-x: none が設定されているか
+□ 横スクロールが防止されているか
+□ オーバースクロールが防止されているか
+```
+
+#### JavaScript制御確認項目
+```
+🚨 スクロール固定化JavaScriptの必須確認項目：
+□ useEffect フックでスクロール監視が実装されているか
+□ handleScroll 関数で window.scrollY < 0 のチェックが実装されているか
+□ window.scrollTo(0, 0) で最上部に戻す処理が実装されているか
+□ scroll イベントリスナーが適切に追加されているか（passive: true）
+□ resize イベントリスナーが適切に追加されているか
+□ クリーンアップ処理（removeEventListener）が実装されているか
+□ メインコンテナに overflow-x-hidden クラスが追加されているか
+□ 最上部を超えてスクロールしても白い背景が表示されないか
+```
+
+### 📋 実装のポイント
+
+#### 1. CSS設定の重要性
+- `overscroll-behavior` プロパティでオーバースクロールを防止
+- `overflow-x: hidden` で横スクロールを防止
+- iOS Safari等のモバイルブラウザでも確実に動作
+
+#### 2. JavaScript制御の必要性
+- CSSだけでは完全に防げない場合があるため、JavaScriptでの監視が必要
+- `window.scrollY < 0` の場合は即座に `window.scrollTo(0, 0)` で最上部に戻す
+- リサイズ時にもチェックすることで、レイアウト変更時にも対応
+
+#### 3. パフォーマンス考慮
+- `passive: true` オプションでスクロールイベントのパフォーマンスを最適化
+- イベントリスナーの適切なクリーンアップでメモリリークを防止
+
+### 🔄 トラブルシューティング
+
+#### 問題：最上部を超えてスクロールできる
+**解決策**:
+1. CSS設定（`overscroll-behavior`）が正しく適用されているか確認
+2. JavaScriptのスクロール監視が正しく動作しているか確認
+3. ブラウザの開発者ツールでコンソールエラーがないか確認
+
+#### 問題：横スクロールが発生する
+**解決策**:
+1. `html` と `body` の両方に `overflow-x: hidden` が設定されているか確認
+2. メインコンテナに `overflow-x-hidden` クラスが追加されているか確認
+3. 幅が100vwを超える要素がないか確認
+
+#### 問題：iOS Safariで動作しない
+**解決策**:
+1. `overscroll-behavior` が正しく設定されているか確認
+2. JavaScriptのスクロール監視が実装されているか確認
+3. メタタグ（`viewport`）が適切に設定されているか確認
+
 ## 🖤 プレミアムプラン専用・黒光感デザインルール（必須）
 
 ### プレミアムプランの高級感演出原則
