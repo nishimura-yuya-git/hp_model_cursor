@@ -1,4 +1,0 @@
-- プロジェクト名は「Nekturn' Lumiere」で、ダンサー向け整体サロンのLP（コーポレートサイト）
-- Vite + React 18 + TypeScript + Tailwind CSSを使用、React Routerで`/`, `/greeting`, `/treatment`, `/menu`, `/contact`, `/news`などのページを提供
-- 主要セクションはお悩み提示、解決策、ビフォーアフター、施術動画、口コミ、代表挨拶、メニュー、アクセス、お問い合わせで構成
-- Lenisによるスムーススクロールを全ページで適用し、高級感あるダンスサロンの世界観を表現するデザインを実装
