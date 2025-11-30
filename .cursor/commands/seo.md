@@ -596,3 +596,4 @@ postalCode:'〒542-0012', addressRegion:'大阪府', addressLocality:'大阪市'
 - すべてのページに `<Meta />` と適切な `<JsonLd />` を必須
 - 住所/営業時間等の変更は `JsonLd.tsx`（LocalBusiness/Organization）と `CompanyInfo.tsx` を同時更新
 - 重要更新時はGSCのインデックス登録を必ず実行
+
