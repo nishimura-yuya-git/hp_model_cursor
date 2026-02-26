@@ -17,31 +17,23 @@ alwaysApply: true
 **いかなる開発作業も、以下の手順を完了するまで開始してはならない：**
 
 1. **全ルールファイルの完全確認（例外なし）**
-   - `.cursor/rules/` ディレクトリ内の全9ファイルを必ず読み込む
+   - `.cursor/rules/` ディレクトリ内の全5ファイルを必ず読み込む
    - "関係なさそう"という自己判断は厳禁
    - UI/UXのみの案件でも全ファイル確認は必須
 
 2. **確認完了チェックリスト（心の中で必ず実行）**
    - [ ] workflow.mdc を読んだか？
+   - [ ] vibe-coding.mdc を読んだか？
    - [ ] core.mdc を読んだか？
    - [ ] ui-design.mdc を読んだか？
    - [ ] architecture.mdc を読んだか？
-   - [ ] database.mdc を読んだか？
-   - [ ] security.mdc を読んだか？
-   - [ ] testing.mdc を読んだか？
-   - [ ] troubleshooting.mdc を読んだか？
-   - [ ] resend-email.mdc を読んだか？
 
 ### 参照順序（厳守）
 1. `.cursor/rules/workflow.mdc` - 開発手順書（最初に必読）
-2. `.cursor/rules/core.mdc` - 基本原則・技術スタック
-3. `.cursor/rules/ui-design.mdc` - デザインシステム・禁止事項
-4. `.cursor/rules/architecture.mdc` - アーキテクチャ設計
-5. `.cursor/rules/database.mdc` - データベース設計
-6. `.cursor/rules/security.mdc` - セキュリティ要件
-7. `.cursor/rules/testing.mdc` - テスト戦略
-8. `.cursor/rules/troubleshooting.mdc` - トラブルシューティング
-9. `.cursor/rules/resend-email.mdc` - Resendメール実装マニュアル
+2. `.cursor/rules/vibe-coding.mdc` - 効率化とMVP開発の哲学
+3. `.cursor/rules/core.mdc` - 基本原則・技術スタック
+4. `.cursor/rules/ui-design.mdc` - デザインシステム・禁止事項
+5. `.cursor/rules/architecture.mdc` - アーキテクチャ設計
 
 ### ⚠️ 警告：部分的な確認は無効
 - 2つのファイルだけ見て「十分」と判断 → **違反**
@@ -62,7 +54,7 @@ alwaysApply: true
 
 ### 📝 実装開始の宣言
 開発を開始する際は、心の中で以下を宣言すること：
-「私は `.cursor/rules/` の全9ファイルを確認し、理解しました。プロジェクトルールを遵守して開発を開始します。」
+「私は `.cursor/rules/` の全5ファイルを確認し、理解しました。プロジェクトルールを遵守して開発を開始します。」
 
 ### 違反時の影響認識
 - ルール未確認での開発は、プロジェクト全体の品質低下を招く
@@ -142,14 +134,11 @@ alwaysApply: true
 
 #### フェーズ4: メール機能実装（お問い合わせフォーム等）
 ```
-1. Resend実装の必須確認
-   ├── resend-email.mdc の完全確認（必須）
-   ├── 環境変数設定の確認
-   ├── Vercel Serverless Function設定
-   └── セキュリティ要件の確認
+1. 環境変数設定の確認
+   ├── APIキーが環境変数で適切に管理されているか
+   └── Vercel Serverless Function設定
 
 2. メール機能実装
-   ├── api/resend/emails.js の実装
    ├── フロントエンドAPI層の実装
    ├── お問い合わせフォームの実装
    └── 自動返信・管理者通知の設定
@@ -551,8 +540,7 @@ await mcp_supabase_generate_typescript_types({
 
 ### メール機能実装時の追加確認項目
 ```
-□ resend-email.mdc の全要件を満たしているか
-□ Resend APIキーが環境変数で適切に管理されているか
+□ APIキーが環境変数で適切に管理されているか
 □ Vercel Serverless Functionが正常に動作するか
 □ CORS設定が適切に行われているか
 □ お問い合わせフォームの自動返信が機能するか
@@ -585,7 +573,7 @@ await mcp_supabase_generate_typescript_types({
 3. チーム内での共有・議論
 4. 改善の実施
 
-## 📝 重要な注意事項
+### 重要な注意事項
 
 ### ルール参照の鉄則
 **必ず実装前に `.cursor/rules/` の全ファイルを確認すること。**
@@ -594,7 +582,7 @@ await mcp_supabase_generate_typescript_types({
 - 禁止ライブラリリスト
 - プロジェクト固有の命名規則
 - セキュリティ要件
-- resend-email.mdc のメール実装要件（お問い合わせフォーム等）
+- メール実装要件（お問い合わせフォーム等）
 
 ### 優先順位の明確化
 ```
