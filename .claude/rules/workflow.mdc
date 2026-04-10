@@ -1,0 +1,632 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# =============================================================================
+# CURSOR RULES - プロジェクト固有ルール優先参照システム
+# =============================================================================
+
+## 🚨 重要：このUser Rulesは参照指示のみ
+
+### 必須：プロジェクト固有ルールを最優先で参照
+**実装前に必ず `.cursor/rules/` ディレクトリの全ファイルを確認してください。**
+
+### 🔴 開発開始前の絶対的義務
+
+**いかなる開発作業も、以下の手順を完了するまで開始してはならない：**
+
+1. **全ルールファイルの完全確認（例外なし）**
+   - `.cursor/rules/` ディレクトリ内のすべての `.mdc` ルールファイルを必ず読み込む
+   - "関係なさそう"という自己判断は厳禁
+   - UI/UXのみの案件でも全ファイル確認は必須
+
+2. **確認完了チェックリスト（心の中で必ず実行）**
+   - [ ] workflow.mdc を読んだか？
+   - [ ] core.mdc を読んだか？
+   - [ ] ui-design.mdc を読んだか？
+   - [ ] ui-language.mdc を読んだか？（UI表記・日本語優先・装飾英語禁止）
+   - [ ] architecture.mdc を読んだか？
+   - [ ] file-splitting.mdc を読んだか？（500行超ファイル分割ルール）
+   - [ ] database.mdc を読んだか？
+   - [ ] security.mdc を読んだか？
+   - [ ] testing.mdc を読んだか？
+   - [ ] troubleshooting.mdc を読んだか？
+   - [ ] resend-email.mdc を読んだか？
+
+### 参照順序（厳守）
+1. `.cursor/rules/workflow.mdc` - 開発手順書（最初に必読）
+2. `.cursor/rules/core.mdc` - 基本原則・技術スタック
+3. `.cursor/rules/ui-design.mdc` - デザインシステム・禁止事項
+4. `.cursor/rules/ui-language.mdc` - UI表記言語（日本語優先・装飾英語禁止）
+5. `.cursor/rules/architecture.mdc` - アーキテクチャ設計
+6. `.cursor/rules/file-splitting.mdc` - ファイル分割ルール（500行上限）
+7. `.cursor/rules/database.mdc` - データベース設計
+8. `.cursor/rules/security.mdc` - セキュリティ要件
+9. `.cursor/rules/testing.mdc` - テスト戦略
+10. `.cursor/rules/troubleshooting.mdc` - トラブルシューティング
+11. `.cursor/rules/resend-email.mdc` - Resendメール実装マニュアル
+
+### ⚠️ 警告：部分的な確認は無効
+- 2つのファイルだけ見て「十分」と判断 → **違反**
+- 「今回はUIだけだから」と省略 → **違反**
+- 「急いでいるから後で」と先送り → **違反**
+
+**全ファイル確認なしに書かれたコードは、すべて無効とみなされる。**
+
+### プロジェクト固有ルールの絶対優先
+- プロジェクト固有の禁止事項・制約は絶対遵守
+- 統合ルールとの矛盾がある場合は、プロジェクト固有ルールを優先
+- 不明な点は実装前に必ず確認
+
+### 日本語対応（必須）
+- 全ての回答・コメント・エラーメッセージは日本語で記述
+- ドキュメントも日本語で作成
+- 英語での回答は禁止
+
+### 📝 実装開始の宣言
+開発を開始する際は、心の中で以下を宣言すること：
+「私は `.cursor/rules/` のすべての `.mdc` ルールを確認し、理解しました。プロジェクトルールを遵守して開発を開始します。」
+
+### 違反時の影響認識
+- ルール未確認での開発は、プロジェクト全体の品質低下を招く
+- 後からの修正コストは初期確認の100倍以上
+- チームの信頼を失う重大な過失
+
+# 🔄 システム開発ワークフロー（必須手順）
+
+## 開発要望受領時の必須ワークフロー
+
+### 1. 要望分析・システム判定
+```
+ユーザーからの要望 → システム要件かどうかの判定
+├── システム機能要望の場合 → 【必須】データベース設計フェーズへ
+├── UI/UXのみの場合 → フロントエンド実装フェーズへ
+└── 既存機能修正の場合 → 影響範囲分析 → 適切なフェーズへ
+```
+
+### 2. システム要望の場合の必須手順
+
+#### フェーズ1: データベース設計（最優先・必須）
+```
+1. 要件分析
+   ├── 必要なエンティティの特定
+   ├── エンティティ間の関係性分析
+   ├── データフロー設計
+   └── セキュリティ要件の洗い出し
+
+2. テーブル構造設計
+   ├── 主テーブルの設計
+   ├── 中間テーブルの設計（多対多関係）
+   ├── 必須フィールドの追加（created_at, updated_at, deleted_at等）
+   ├── インデックス戦略
+   └── 制約・バリデーション設計
+
+3. RLSポリシー設計
+   ├── アクセス権限の分析
+   ├── ユーザーロール別アクセス制御
+   ├── データレベルセキュリティ
+   └── 動的権限管理
+```
+
+#### フェーズ2: Supabase MCP実装（必須）
+```
+1. テーブル作成
+   ├── mcp_supabase_apply_migration でテーブル作成
+   ├── インデックス・制約の追加
+   └── テーブル関係性の設定
+
+2. RLSポリシー実装
+   ├── mcp_supabase_apply_migration でRLS有効化
+   ├── ユーザー権限ポリシーの実装
+   ├── データアクセス制御ポリシーの実装
+   └── 管理者権限ポリシーの実装
+
+3. 動作確認
+   ├── mcp_supabase_execute_sql でテストクエリ実行
+   ├── RLSポリシーの動作確認
+   └── セキュリティテスト
+```
+
+#### フェーズ3: フロントエンド実装
+```
+1. TypeScript型定義生成
+   ├── mcp_supabase_generate_typescript_types で型生成
+   └── 型定義ファイルの更新
+
+2. API層実装
+   ├── サービス層の実装
+   ├── カスタムフックの作成
+   └── エラーハンドリング
+
+3. UI/UXコンポーネント実装
+   ├── フォームコンポーネント
+   ├── 一覧表示コンポーネント
+   └── 詳細表示コンポーネント
+
+#### フェーズ4: メール機能実装（お問い合わせフォーム等）
+```
+1. Resend実装の必須確認
+   ├── resend-email.mdc の完全確認（必須）
+   ├── 環境変数設定の確認
+   ├── Vercel Serverless Function設定
+   └── セキュリティ要件の確認
+
+2. メール機能実装
+   ├── api/resend/emails.js の実装
+   ├── フロントエンドAPI層の実装
+   ├── お問い合わせフォームの実装
+   └── 自動返信・管理者通知の設定
+
+3. 動作確認・テスト
+   ├── メール送信テスト
+   ├── エラーハンドリングテスト
+   ├── セキュリティテスト
+   └── 本番環境での動作確認
+```
+```
+
+## 具体的な実装例
+
+### システム要望例: "ユーザー管理機能"
+
+#### 1. データベース設計フェーズ
+```sql
+-- ユーザーテーブル設計
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL,
+  avatar_url TEXT,
+  phone TEXT,
+  bio TEXT,
+  
+  -- 必須フィールド
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  created_by UUID REFERENCES users(id),
+  updated_by UUID REFERENCES users(id),
+  deleted_at TIMESTAMPTZ,
+  deleted_by UUID REFERENCES users(id),
+  version INTEGER DEFAULT 1 NOT NULL,
+  metadata JSONB DEFAULT '{}',
+  
+  -- 検索用
+  search_vector tsvector GENERATED ALWAYS AS (
+    to_tsvector('japanese', coalesce(first_name, '') || ' ' || coalesce(last_name, '') || ' ' || coalesce(email, ''))
+  ) STORED
+);
+
+-- ロールテーブル
+CREATE TABLE roles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT UNIQUE NOT NULL,
+  description TEXT,
+  permissions JSONB DEFAULT '[]',
+  
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  created_by UUID REFERENCES users(id),
+  updated_by UUID REFERENCES users(id),
+  deleted_at TIMESTAMPTZ,
+  version INTEGER DEFAULT 1 NOT NULL,
+  metadata JSONB DEFAULT '{}'
+);
+
+-- ユーザーロール中間テーブル（拡張可能設計）
+CREATE TABLE user_roles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+  
+  -- 期間管理
+  started_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  ended_at TIMESTAMPTZ,
+  
+  -- 承認フロー
+  status TEXT DEFAULT 'active' CHECK (status IN ('pending', 'active', 'suspended', 'terminated')),
+  approved_by UUID REFERENCES users(id),
+  approved_at TIMESTAMPTZ,
+  
+  -- 監査
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  created_by UUID REFERENCES users(id),
+  updated_by UUID REFERENCES users(id),
+  metadata JSONB DEFAULT '{}',
+  
+  UNIQUE(user_id, role_id, started_at)
+);
+
+-- インデックス
+CREATE INDEX idx_users_email ON users(email) WHERE deleted_at IS NULL;
+CREATE INDEX idx_users_search ON users USING GIN(search_vector);
+CREATE INDEX idx_user_roles_active ON user_roles(user_id, role_id) 
+  WHERE status = 'active' AND ended_at IS NULL;
+```
+
+#### 2. RLSポリシー設計
+```sql
+-- RLS有効化
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
+-- ユーザー自身のデータアクセス
+CREATE POLICY "users_own_data" ON users
+  FOR ALL USING (auth.uid() = id);
+
+-- 管理者権限
+CREATE POLICY "admin_full_access" ON users
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM user_roles ur
+      JOIN roles r ON ur.role_id = r.id
+      WHERE ur.user_id = auth.uid()
+      AND r.name = 'admin'
+      AND ur.status = 'active'
+      AND (ur.ended_at IS NULL OR ur.ended_at > NOW())
+    )
+  );
+
+-- 組織内ユーザーの閲覧権限
+CREATE POLICY "organization_users_read" ON users
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM user_organizations uo1
+      JOIN user_organizations uo2 ON uo1.organization_id = uo2.organization_id
+      WHERE uo1.user_id = auth.uid()
+      AND uo2.user_id = users.id
+      AND uo1.status = 'active'
+      AND uo2.status = 'active'
+    )
+  );
+
+-- ロールアクセス制御
+CREATE POLICY "roles_admin_only" ON roles
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM user_roles ur
+      JOIN roles r ON ur.role_id = r.id
+      WHERE ur.user_id = auth.uid()
+      AND r.name IN ('admin', 'super_admin')
+      AND ur.status = 'active'
+    )
+  );
+```
+
+#### 3. Supabase MCP実装手順
+```typescript
+// 1. マイグレーション適用
+await mcp_supabase_apply_migration({
+  project_id: "your-project-id",
+  name: "create_user_management_tables",
+  query: `
+    -- 上記のCREATE TABLE文とインデックス
+  `
+});
+
+// 2. RLSポリシー適用
+await mcp_supabase_apply_migration({
+  project_id: "your-project-id", 
+  name: "setup_user_management_rls",
+  query: `
+    -- 上記のRLSポリシー設定
+  `
+});
+
+// 3. 動作確認
+await mcp_supabase_execute_sql({
+  project_id: "your-project-id",
+  query: "SELECT * FROM users LIMIT 1;"
+});
+
+// 4. TypeScript型生成
+await mcp_supabase_generate_typescript_types({
+  project_id: "your-project-id"
+});
+```
+
+## 必須チェックリスト
+
+### データベース設計完了確認
+- [ ] 全エンティティが特定されているか
+- [ ] 中間テーブルが適切に設計されているか
+- [ ] 必須フィールド（監査、論理削除等）が含まれているか
+- [ ] インデックス戦略が適切か
+- [ ] 制約・バリデーションが設定されているか
+- [ ] 全文検索が必要な場合、search_vectorが設定されているか
+
+### RLSポリシー設計完了確認
+- [ ] 全テーブルでRLSが有効化されているか
+- [ ] ユーザー自身のデータアクセスポリシーがあるか
+- [ ] 管理者権限ポリシーが設定されているか
+- [ ] 組織・グループレベルのアクセス制御があるか
+- [ ] セキュリティホールがないか
+- [ ] パフォーマンスを考慮したポリシー設計か
+
+### Supabase MCP実装完了確認
+- [ ] テーブル作成マイグレーションが成功したか
+- [ ] RLSポリシー設定マイグレーションが成功したか
+- [ ] テストクエリが正常に実行されるか
+- [ ] TypeScript型定義が生成されたか
+- [ ] セキュリティアドバイザーでエラーがないか
+
+## 開発フロー例外ルール
+
+### 例外1: 緊急性の高い修正
+```
+緊急バグ修正 → 既存構造への影響分析 → 最小限の変更で対応
+```
+
+### 例外2: UI/UXのみの変更
+```
+デザイン変更のみ → データベース変更なし → 直接フロントエンド実装
+```
+
+### 例外3: 設定・マスターデータの変更
+```
+設定値変更 → system_configurations テーブル更新 → 動作確認
+```
+
+## 品質保証
+
+### 必須テスト項目
+```
+1. データベーステスト
+   ├── マイグレーション成功確認
+   ├── RLSポリシー動作確認
+   ├── データ整合性確認
+   └── パフォーマンステスト
+
+2. セキュリティテスト
+   ├── 権限昇格テスト
+   ├── データ漏洩テスト
+   ├── SQLインジェクションテスト
+   └── 認証バイパステスト
+
+3. 統合テスト
+   ├── API動作確認
+   ├── フロントエンド連携確認
+   └── エラーハンドリング確認
+```
+
+## エラー時の対処法
+
+### データベース設計エラー
+```
+1. ロールバック用SQLの準備
+2. 段階的な修正実施
+3. データ整合性の再確認
+4. 影響範囲の再評価
+```
+
+### RLSポリシーエラー
+```
+1. ポリシーの一時無効化
+2. 権限マトリックスの再確認
+3. テストケースでの動作確認
+4. 段階的なポリシー適用
+```
+
+この包括的なワークフローにより、システム要望に対して常にデータベース設計を最優先とし、Supabase MCPを活用した確実な実装が保証されます。
+# 🔄 開発ワークフロー手順書
+
+## 📋 実装前必須チェックリスト
+
+### 1. プロジェクト固有ルール確認（最優先）
+```
+□ .cursor/rules/ ディレクトリの全ファイルを確認
+□ ui-design.mdc のデザイン原則・禁止事項を確認
+  └─ 特に「カードデザイン禁止」などの明確な制約
+□ ui-language.mdc（日本語優先・装飾英語禁止）を確認
+□ core.mdc の技術スタック・基本原則を確認
+□ architecture.mdc のディレクトリ構造を確認
+□ 禁止ライブラリリストを確認（lucide-react等）
+□ テスト駆動ルール：実装前にテストを作成し、実装後にテストを実行する
+```
+
+### 2. 実装優先順位
+```
+1. プロジェクト固有ルール (.cursor/rules/*.mdc)
+2. プロジェクト要件・仕様
+3. 一般的なベストプラクティス
+```
+
+## 🧪 テスト駆動ルール（必須）
+
+**修正・新規機能開発問わず、以下の順序を厳守すること。**
+
+### 実装前
+1. **テストを先に作成する**
+   - 新機能：期待する動作を検証するテストコードを書く
+   - バグ修正：バグを再現するテストコードを書く
+2. テストを提示し、承認を得てから実装を開始する
+
+### 実装後
+3. **作成したテストを実行する**
+4. **既存テストも全て実行し、他機能への影響がないことを確認する**
+
+### フロー
+```
+要件 → テスト作成 → 承認 → 実装 → テスト実行（新規＋既存）
+```
+
+## 🚀 開発フロー
+
+### Phase 1: 要件分析
+```
+1. ユーザー要望の完全理解
+   └─ 何を作るのか
+   └─ なぜ必要なのか
+   └─ どのような制約があるか
+
+2. 既存コードの確認
+   └─ 関連ファイルの把握
+   └─ 影響範囲の分析
+   └─ 再利用可能な部分の特定
+```
+
+### Phase 2: 設計
+```
+1. システム要件の場合
+   └─ データベース設計を最優先
+   └─ テーブル構造・RLS設計
+   └─ Supabase MCP実装計画
+
+2. UI/UX要件の場合
+   └─ デザイン原則の確認
+   └─ コンポーネント設計
+   └─ レスポンシブ対応計画
+
+3. 業種別カスタマイズ
+   └─ デザイン原則の確認
+   └─ コンポーネント設計
+   └─ レスポンシブ対応計画
+```
+
+### Phase 3: 実装
+```
+1. ディレクトリ構造の確認
+   src/
+   ├── components/
+   │   ├── ui/        # 基本UIコンポーネント
+   │   ├── layout/    # レイアウトコンポーネント
+   │   └── features/  # 機能別コンポーネント
+   ├── pages/         # ページコンポーネント
+   ├── hooks/         # カスタムフック
+   ├── services/      # APIサービス層
+   ├── utils/         # ユーティリティ関数
+   └── types/         # TypeScript型定義
+
+2. コーディング規約
+   └─ TypeScript strict mode
+   └─ 関数は200行以内
+   └─ 適切な型定義
+   └─ 日本語コメント必須
+```
+
+### Phase 4: 品質チェック
+```
+□ 作成したテストを実行し、全て通過するか
+□ 既存テストを全て実行し、回帰がないか
+□ ESLint エラーがないか
+□ TypeScript 型エラーがないか
+□ プロジェクト固有の禁止事項に違反していないか
+□ セキュリティ脆弱性がないか
+□ パフォーマンス問題がないか
+```
+
+## ⚠️ 絶対禁止事項
+
+### デザイン
+- **カードデザインの使用禁止**
+  └─ 代替：自然で流れるようなレイアウト
+- チープなアイコン・素材の使用禁止
+- 余白不足（24px未満）の禁止
+
+### ライブラリ
+- lucide-react（絶対禁止）
+- @heroicons/react（インポートエラー）
+- react-icons（避けるべき）
+- moment.js（date-fns使用）
+- lodash（ES6使用）
+
+### コーディング
+- any型の使用
+- console.log の本番環境残留
+- ハードコーディングされた秘匿情報
+- 未処理のPromise
+
+## 🔧 トラブルシューティング
+
+### よくある問題
+1. **インポートエラー**
+   ```bash
+   # 禁止ライブラリの確認
+   grep -r "lucide-react" src/
+   grep -r "@heroicons/react" src/
+   ```
+
+2. **ビルドエラー**
+   ```bash
+   # キャッシュクリア
+   rm -rf node_modules/.vite
+   rm -rf dist
+   npm install
+   ```
+
+3. **型エラー**
+   ```bash
+   # 型チェック
+   npx tsc --noEmit
+   ```
+
+## 📊 実装後チェックリスト
+
+### 必須確認項目
+```
+□ プロジェクト固有ルールに準拠しているか
+□ 禁止事項に違反していないか
+□ デザイン原則に従っているか
+□ セキュリティ要件を満たしているか
+□ パフォーマンスが適切か
+□ レスポンシブ対応ができているか
+□ アクセシビリティ要件を満たしているか
+□ エラーハンドリングが適切か
+```
+
+### メール機能実装時の追加確認項目
+```
+□ resend-email.mdc の全要件を満たしているか
+□ Resend APIキーが環境変数で適切に管理されているか
+□ Vercel Serverless Functionが正常に動作するか
+□ CORS設定が適切に行われているか
+□ お問い合わせフォームの自動返信が機能するか
+□ 管理者通知メールが送信されるか
+□ メールテンプレートがレスポンシブ対応しているか
+□ エラーハンドリングが適切に実装されているか
+□ セキュリティ脆弱性（XSS、インジェクション等）がないか
+□ 送信制限・レート制限が考慮されているか
+```
+
+### デプロイ前確認
+```
+□ 環境変数が適切に設定されているか
+□ ビルドが成功するか
+□ 本番環境での動作確認
+□ セキュリティヘッダーの設定
+□ パフォーマンス測定
+```
+
+## 🔄 継続的改善
+
+### 定期レビュー項目
+- 週次：ESLint警告の解消
+- 月次：パッケージ更新・セキュリティ監査
+- 四半期：アーキテクチャ見直し
+
+### フィードバックループ
+1. 実装上の問題点を記録
+2. ルールファイルの更新提案
+3. チーム内での共有・議論
+4. 改善の実施
+
+## 📝 重要な注意事項
+
+### ルール参照の鉄則
+**必ず実装前に `.cursor/rules/` の全ファイルを確認すること。**
+特に以下は見落としやすいので注意：
+- ui-design.mdc の「カードデザイン禁止」
+- 禁止ライブラリリスト
+- プロジェクト固有の命名規則
+- セキュリティ要件
+- resend-email.mdc のメール実装要件（お問い合わせフォーム等）
+
+### 優先順位の明確化
+```
+プロジェクト固有ルール > 一般的なベストプラクティス
+```
+
+この手順書は定期的に更新され、プロジェクトの成長とともに進化します。
+

@@ -1,0 +1,220 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# 🏗️ アーキテクチャ・設計原則
+
+## 必須ディレクトリ構造（拡張性重視）
+
+```
+src/
+├── components/           # 再利用可能コンポーネント
+│   ├── ui/              # 基本UIコンポーネント（原子レベル）
+│   │   ├── Button/
+│   │   │   ├── Button.tsx
+│   │   │   ├── Button.test.tsx
+│   │   │   ├── Button.stories.tsx
+│   │   │   └── index.ts
+│   │   ├── Input/
+│   │   ├── Modal/
+│   │   ├── Toast/
+│   │   └── index.ts
+│   ├── layout/          # レイアウトコンポーネント（分子レベル）
+│   │   ├── Header/
+│   │   ├── Footer/
+│   │   ├── Sidebar/
+│   │   ├── Navigation/
+│   │   └── Layout/
+│   ├── features/        # 機能別コンポーネント（生体レベル）
+│   │   ├── auth/
+│   │   │   ├── components/
+│   │   │   ├── hooks/
+│   │   │   ├── services/
+│   │   │   ├── types/
+│   │   │   └── index.ts
+│   │   ├── dashboard/
+│   │   ├── profile/
+│   │   ├── billing/
+│   │   └── analytics/
+│   └── common/          # 共通コンポーネント
+│       ├── Loading/
+│       ├── ErrorBoundary/
+│       ├── SEO/
+│       └── ProtectedRoute/
+├── pages/               # ページコンポーネント（テンプレートレベル）
+│   ├── Home/
+│   │   ├── Home.tsx
+│   │   ├── sections/
+│   │   │   ├── HeroSection.tsx
+│   │   │   ├── FeaturesSection.tsx
+│   │   │   └── CTASection.tsx
+│   │   └── index.ts
+│   ├── About/
+│   ├── Contact/
+│   └── Dashboard/
+├── hooks/               # カスタムフック（ビジネスロジック分離）
+│   ├── auth/
+│   │   ├── useAuth.ts
+│   │   ├── usePermissions.ts
+│   │   └── useProfile.ts
+│   ├── api/
+│   │   ├── useQuery.ts
+│   │   ├── useMutation.ts
+│   │   └── useInfiniteQuery.ts
+│   ├── ui/
+│   │   ├── useModal.ts
+│   │   ├── useToast.ts
+│   │   └── useLocalStorage.ts
+│   └── business/
+│       ├── useAnalytics.ts
+│       ├── useBilling.ts
+│       └── useNotifications.ts
+├── services/            # APIサービス層（責任分離）
+│   ├── api/
+│   │   ├── auth.service.ts
+│   │   ├── user.service.ts
+│   │   ├── billing.service.ts
+│   │   └── analytics.service.ts
+│   ├── storage/
+│   │   ├── file.service.ts
+│   │   └── cache.service.ts
+│   └── external/
+│       ├── payment.service.ts
+│       └── email.service.ts
+├── utils/               # ユーティリティ関数（純粋関数）
+│   ├── supabase.ts
+│   ├── validation.ts
+│   ├── formatters.ts
+│   ├── constants.ts
+│   ├── helpers.ts
+│   └── security.ts
+├── types/               # TypeScript型定義（型安全性）
+│   ├── auth.types.ts
+│   ├── database.types.ts  # Supabase自動生成
+│   ├── api.types.ts
+│   ├── ui.types.ts
+│   └── business.types.ts
+├── store/               # 状態管理（React Context推奨）
+│   ├── contexts/        # Reactコンテキスト
+│   │   ├── AuthContext.tsx
+│   │   ├── UIContext.tsx
+│   │   └── UserContext.tsx
+│   └── hooks/          # 状態管理用カスタムフック
+│       ├── useSupabaseQuery.ts
+│       ├── useSupabaseMutation.ts
+│       └── useLocalStorage.ts
+├── styles/              # スタイル関連
+│   ├── globals.css
+│   ├── components.css
+│   ├── animations.css
+│   └── themes.css
+├── assets/              # 静的アセット（高品質のみ）
+│   ├── images/
+│   │   ├── hero/
+│   │   ├── icons/       # SVG推奨、PNG禁止
+│   │   ├── backgrounds/
+│   │   └── logos/
+│   ├── fonts/           # カスタムフォント
+│   ├── videos/          # 背景動画・デモ動画
+│   └── documents/       # PDF等
+├── lib/                 # 外部ライブラリ設定・ラッパー
+│   ├── supabase.ts
+│   ├── analytics.ts
+│   ├── seo.ts
+│   ├── payments.ts
+│   └── monitoring.ts
+├── config/              # 設定ファイル
+│   ├── env.ts
+│   ├── constants.ts
+│   ├── routes.ts
+│   └── permissions.ts
+├── middleware/          # ミドルウェア
+│   ├── auth.middleware.ts
+│   ├── logging.middleware.ts
+│   └── error.middleware.ts
+└── tests/               # テストファイル
+    ├── __mocks__/
+    ├── components/
+    ├── pages/
+    ├── services/
+    ├── utils/
+    ├── e2e/
+    └── setup.ts
+```
+
+## コンポーネント設計原則
+
+### Atomic Design階層
+1. **原子（Atoms）**: `src/components/ui/` - 最小単位のUIコンポーネント
+2. **分子（Molecules）**: `src/components/layout/` - 原子を組み合わせた機能単位
+3. **生体（Organisms）**: `src/components/features/` - ビジネスロジックを含む複合コンポーネント
+4. **テンプレート（Templates）**: `src/pages/` - ページレイアウト
+5. **ページ（Pages）**: `src/pages/` - 実際のページコンポーネント
+
+### コンポーネント作成ルール
+- 各コンポーネントは独自のディレクトリを持つ
+- index.ts でエクスポートを統一
+- TypeScript型定義を必ず含める
+- テストファイルを必ず作成
+- Storybookストーリーを作成（UI コンポーネント）
+
+### インポート順序（必須）
+```typescript
+// 1. React関連
+import React from 'react';
+import { useState, useEffect } from 'react';
+
+// 2. 外部ライブラリ
+import { clsx } from 'clsx';
+import { format } from 'date-fns';
+
+// 3. 内部モジュール（絶対パス）
+import { Button } from '@/components/ui/Button';
+import { useAuth } from '@/hooks/auth/useAuth';
+import { validateEmail } from '@/utils/validation';
+
+// 4. 相対パス
+import './Component.css';
+import type { ComponentProps } from './types';
+```
+
+### Props設計原則
+```typescript
+// ✅ 推奨：明確な型定義
+interface ButtonProps {
+  variant: 'primary' | 'secondary' | 'outline' | 'ghost';
+  size: 'sm' | 'md' | 'lg';
+  disabled?: boolean;
+  loading?: boolean;
+  children: React.ReactNode;
+  onClick?: () => void;
+  className?: string;
+}
+
+// ❌ 禁止：any型の使用
+interface BadProps {
+  data: any; // NG
+  config: object; // NG
+}
+```
+
+### ファイル命名規則
+- **コンポーネント**: PascalCase（例：`UserProfile.tsx`）
+- **フック**: camelCase with use prefix（例：`useUserData.ts`）
+- **ユーティリティ**: camelCase（例：`formatDate.ts`）
+- **型定義**: camelCase with .types suffix（例：`user.types.ts`）
+- **サービス**: camelCase with .service suffix（例：`auth.service.ts`）
+
+### 状態管理戦略
+- **ローカル状態**: useState, useReducer
+- **グローバル状態**: React Context + useContext
+- **サーバー状態**: カスタムフック（useQuery, useMutation）
+- **フォーム状態**: React Hook Form
+- **URL状態**: React Router
+
+### エラーハンドリング戦略
+- ErrorBoundaryで予期しないエラーをキャッチ
+- try-catch でAPI呼び出しエラーを処理
+- カスタムフックでエラー状態を管理
+- ユーザーフレンドリーなエラーメッセージ表示
