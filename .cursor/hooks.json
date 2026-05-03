@@ -1,0 +1,25 @@
+{
+    "version": 1,
+    "hooks": {
+      "preToolUse": [
+        {
+          "command": "context-mode hook cursor pretooluse",
+          "matcher": "Shell|Read|Grep|WebFetch|Task|MCP:ctx_execute|MCP:ctx_execute_file|MCP:ctx_batch_execute"
+        },
+        {
+          "command": "node scripts/cursor-safety-guard.cjs",
+          "matcher": "Write|StrReplace|Delete|EditNotebook"
+        }
+      ],
+      "postToolUse": [
+        {
+          "command": "context-mode hook cursor posttooluse"
+        }
+      ],
+      "stop": [
+        {
+          "command": "context-mode hook cursor stop"
+        }
+      ]
+    }
+  }

@@ -1,0 +1,161 @@
+---
+description: 既存を壊さず拡張するための汎用アーキテクチャ規約（Adapter Layer / SSoT / 契約）
+globs:
+alwaysApply: true
+---
+
+# Architecture Extension Rules（整合性駆動開発）
+
+既存機能を壊さずに新機能を追加するための規約。
+案件固有の重要ファイル・SSoT・業務コアは `PROJECT_MEMORY.md` に記録し、このルールでは汎用原則を定める。
+
+---
+
+## 1. 大原則：Single Source of Truth（SSoT）
+
+業務上重要な計算・判定・表示優先度は1箇所に集約する。
+同じロジックを複数の場所にコピーしてはならない。
+
+### SSoTになりやすいもの
+
+| 領域 | 例 |
+|---|---|
+| 金額計算 | 請求金額、売上、給与、割引、税、手数料 |
+| 数量計算 | 在庫数、予約枠、利用回数、ポイント |
+| 表示優先度 | 確定値を優先するか、未確定ログを使うか |
+| 権限判定 | 管理者、本人、所属組織、公開範囲 |
+| ステータス遷移 | 承認、確定、キャンセル、完了 |
+| 外部連携 | メール送信、LINE通知、Webhook送信 |
+
+案件固有のSSoT一覧は `PROJECT_MEMORY.md` に書く。
+
+---
+
+## 2. 禁止パターン
+
+### SSoT関数の再実装
+
+```ts
+// 禁止: 既存の計算式を別ファイルでコピーして少し変える
+const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+```
+
+```ts
+// 推奨: 既存のSSoTをimportして使う
+const total = calculateTotal(items);
+```
+
+### ついでの改造
+
+- 依頼されていない既存関数のシグネチャ変更は禁止。
+- 戻り値、引数順、副作用、エラー挙動を勝手に変えない。
+- 改善したくなった場合は、別名の新関数またはAdapterを追加する。
+
+### コピー＆改変
+
+```text
+src/utils/originalCalculation.ts
+src/features/new-feature/copiedCalculation.ts  ← 禁止
+```
+
+計算式・判定式が分裂すると、画面ごとに結果がズレる。
+
+---
+
+## 3. 推奨パターン：Adapter Layer
+
+新機能や拡張は、既存SSoTをラップして追加する。
+
+```text
+src/
+  utils/ or lib/
+    [既存SSoT]                 ← 変更しない
+  features/
+    [new-feature]/
+      [NewFeature]Page.tsx
+      use[NewFeature].ts
+      [newFeature]Service.ts
+      [newFeature]Logic.ts      ← 既存SSoTをimportして拡張
+      [newFeature].test.ts
+      README.md
+```
+
+### Adapterの例
+
+```ts
+export function calculateTotalWithOption(
+  items: Item[],
+  option: CalculationOption
+) {
+  const base = calculateTotal(items);
+
+  return {
+    ...base,
+    optionResult: applyOption(base, option),
+  };
+}
+```
+
+既存SSoTを直接書き換えず、新しい責務を外側に足す。
+
+---
+
+## 4. 既存関数のシグネチャを変えたくなったら
+
+Strangler Fig パターンを使う。
+
+1. 新シグネチャの関数を別名で追加する。
+2. 既存関数はそのまま残す。
+3. 呼び出し元を1つずつ移行する。
+4. 全箇所の移行完了後、ユーザー承認を得て旧関数を削除する。
+
+一度に全呼び出し元を変えない。
+
+---
+
+## 5. 業務コア領域への変更ルール
+
+以下に該当する領域は、既存ファイル編集前に変更契約を出す。
+
+- 金額、在庫、給与、請求、予約、権限、通知などの中核処理
+- 複数画面が同じ値を参照する処理
+- 外部サービスと同期する処理
+- 確定済みデータや手動修正値を扱う処理
+- `PROJECT_MEMORY.md` でHard Boundaryに指定されたファイル
+
+変更契約では以下を明示する。
+
+```text
+□ 触るファイル
+□ 触らないファイル・関数
+□ 変更する関数・型・DB・API
+□ 影響を受ける画面
+□ 影響を受ける不変条件
+□ 実行するテスト
+```
+
+---
+
+## 6. import方向の原則
+
+- 共通計算・共通判定は `utils` / `lib` / `contracts` などのSSoTに寄せる。
+- 新機能は既存コアを参照してよいが、既存コアから新機能へ依存させない。
+- 双方向依存が必要に見える場合は、共通層へ抽出する。
+
+```text
+features/ → pages or app/ → utils/lib/contracts
+                    ↑              ↑
+                画面構成        SSoT
+```
+
+---
+
+## 7. 実装後の確認
+
+```text
+□ 既存SSoTをコピーしていないか
+□ 既存関数のシグネチャを勝手に変えていないか
+□ 新規ロジックの責務が既存コアに逆流していないか
+□ 業務コアの変更契約と実diffが一致しているか
+□ PROJECT_MEMORY.md のHard Boundaryと矛盾していないか
+```

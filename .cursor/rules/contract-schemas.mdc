@@ -1,0 +1,143 @@
+---
+description: 重要な暗黙契約をZod等で型・契約として表現するための汎用ガイドライン
+globs:
+alwaysApply: false
+---
+
+# Contract Schemas（契約スキーマ設計ガイド）
+
+業務上の暗黙契約を、ZodなどのランタイムスキーマとTypeScript型で明示するためのガイドライン。
+このルールは、重要な値の契約をコード上で固定する必要が出たときに参照する。
+
+---
+
+## 1. なぜ契約スキーマが必要か
+
+暗黙契約は、コメントや仕様書だけでは忘れられやすい。
+契約スキーマを入れると、DBやAPIから不正な値が来た時点で検知できる。
+
+効果:
+
+- 不正データを早期に止められる。
+- IDE補完と型チェックが効く。
+- AIや人間が契約を読み落としても、型やparseで気づける。
+- 不変条件テストと組み合わせやすい。
+
+---
+
+## 2. 契約スキーマにすべきもの
+
+| 種別 | 例 |
+|---|---|
+| ステータス | `draft`, `approved`, `confirmed`, `cancelled` |
+| 保護フィールド | `locked_fields`, `manual_fields`, `override_fields` |
+| 権限・ロール | `admin`, `staff`, `customer` |
+| 外部連携状態 | `pending`, `sent`, `failed`, `delivered` |
+| 決済・請求状態 | `unpaid`, `paid`, `refunded` |
+| 予約状態 | `requested`, `confirmed`, `cancelled` |
+| 計算条件 | 税率、丸めルール、単価種別、適用プラン |
+
+---
+
+## 3. 配置場所
+
+```text
+src/
+  contracts/
+    [domain].contract.ts
+    [tableOrApi].contract.ts
+    index.ts
+```
+
+例:
+
+```text
+src/contracts/
+  billing.contract.ts
+  reservations.contract.ts
+  notifications.contract.ts
+  permissions.contract.ts
+```
+
+---
+
+## 4. 設計指針
+
+### 列挙値は `as const` または `z.enum` で固定する
+
+```ts
+export const OrderStatusValues = [
+  "draft",
+  "confirmed",
+  "cancelled",
+] as const;
+
+export const OrderStatusSchema = z.enum(OrderStatusValues);
+export type OrderStatus = z.infer<typeof OrderStatusSchema>;
+```
+
+### 保護対象フィールドは契約として固定する
+
+```ts
+export const ProtectedFieldValues = [
+  "total_amount",
+  "quantity",
+  "note",
+] as const;
+
+export const ProtectedFieldsSchema = z.array(z.enum(ProtectedFieldValues));
+export type ProtectedField = typeof ProtectedFieldValues[number];
+```
+
+### 保護判定はヘルパー関数へ集約する
+
+```ts
+export function isProtectedField(
+  protectedFields: ProtectedField[],
+  field: ProtectedField
+): boolean {
+  return protectedFields.includes(field);
+}
+```
+
+同じ判定を複数ファイルに直接書かない。
+
+### DB/API境界でparseする
+
+```ts
+const parsed = DomainSchema.parse(rawFromDbOrApi);
+```
+
+業務ロジックに渡す前に、契約を満たしていることを確認する。
+
+---
+
+## 5. 変更時の注意
+
+- 契約スキーマの追加・変更は破壊的になりうる。
+- 既存データが新スキーマを満たすか確認する。
+- 既存業務コアへ後付けする場合は段階的に導入する。
+- 同じ契約を複数箇所に書かない。
+- 契約変更が不変条件に影響する場合は、`PROJECT_MEMORY.md` とテストも見直す。
+
+---
+
+## 6. 実装前チェック
+
+```text
+□ 何の契約を固定するのか
+□ 既存データはその契約を満たすか
+□ parseに失敗した場合の扱いは決まっているか
+□ 画面/API/DBのどこで検証するか
+□ 不変条件テストが必要か
+□ ユーザー承認が必要な破壊的変更ではないか
+```
+
+---
+
+## 7. 関連
+
+- `invariants.mdc` — 不変条件と契約は表裏一体
+- `architecture-extension.mdc` — SSoT / Adapter Layer の原則
+- `database.mdc` — 確定データ・保護フィールド・同期契約
+- `PROJECT_MEMORY.md` — 案件固有の契約・不変条件

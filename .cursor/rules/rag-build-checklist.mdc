@@ -1,0 +1,39 @@
+---
+description: >-
+  RAG・マニュアルAI・Gemini・Vercel AI SDK 関連の実装・改修時に、doc/todo/rag-build-checklist.md（厳格版）をゲートとして適用する。
+globs:
+  - "**/Manual/**"
+  - "**/manualChat/**"
+  - "**/faq/**"
+  - "server/manual-chat-route.js"
+  - "dev-api-server.js"
+alwaysApply: false
+---
+
+# RAG・マニュアルAI 厳格チェックリスト（ルール要約）
+
+## 必ず読む一次資料
+
+実装・レビュー前に **`doc/todo/rag-build-checklist.md`（厳格版）** を開き、該当フェーズ（P0/P1/P2）の **［必須］** と **セクション 0（不変条件）** を満たすこと。
+
+## 絶対禁止（要約）
+
+- **`GEMINI_API_KEY` をフロント（`VITE_`）やクライアントに露出**させない。
+- ブラウザから **Gemini / 生成API を直接**呼ばない（サーバールート経由）。
+- **無制限のツールステップ・再帰的 LLM 呼び出し・無限リトライ**を置かない（導入時は上限と文書化）。
+
+## 実装の正
+
+- SDK 呼び出しの標準位置: `server/manual-chat-route.js`（変更時は同ファイルまたは PR で代替を明示）。
+- クライアントは `src/services/manualChat/streamManualChat.ts` の **fetch のみ** を原則とする（`@ai-sdk/react` を増やす場合はセクション 5 と PR 記載必須）。
+
+## PR で必須の宣言
+
+RAG / チャット API に触れる PR には、次のいずれかを本文に含める：
+
+1. **チェックリスト該当項目のチェック結果**（満たした ID / N/A の理由）、または  
+2. **フェーズ」（P0のみ / P1 向け）** と **既知の未達**（別 Issue 番号）
+
+## ユーザーが明示したとき
+
+ユーザーから **「RAGチェックリスト」「rag-build-checklist」** と命じられたら、全セクションを読み、**未チェックの［必須］** を列挙し、コードとの差分を報告する。

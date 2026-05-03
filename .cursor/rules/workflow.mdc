@@ -17,23 +17,35 @@ alwaysApply: true
 **いかなる開発作業も、以下の手順を完了するまで開始してはならない：**
 
 1. **全ルールファイルの完全確認（例外なし）**
-   - `.cursor/rules/` ディレクトリ内の全5ファイルを必ず読み込む
+   - `.cursor/rules/` ディレクトリ内のすべての `.mdc` ルールファイルを必ず読み込む
    - "関係なさそう"という自己判断は厳禁
    - UI/UXのみの案件でも全ファイル確認は必須
 
 2. **確認完了チェックリスト（心の中で必ず実行）**
    - [ ] workflow.mdc を読んだか？
-   - [ ] vibe-coding.mdc を読んだか？
    - [ ] core.mdc を読んだか？
    - [ ] ui-design.mdc を読んだか？
+   - [ ] ui-language.mdc を読んだか？（UI表記・日本語優先・装飾英語禁止）
    - [ ] architecture.mdc を読んだか？
+   - [ ] file-splitting.mdc を読んだか？（500行超ファイル分割ルール）
+   - [ ] database.mdc を読んだか？
+   - [ ] security.mdc を読んだか？
+   - [ ] testing.mdc を読んだか？
+   - [ ] troubleshooting.mdc を読んだか？
+   - [ ] resend-email.mdc を読んだか？
 
 ### 参照順序（厳守）
 1. `.cursor/rules/workflow.mdc` - 開発手順書（最初に必読）
-2. `.cursor/rules/vibe-coding.mdc` - 効率化とMVP開発の哲学
-3. `.cursor/rules/core.mdc` - 基本原則・技術スタック
-4. `.cursor/rules/ui-design.mdc` - デザインシステム・禁止事項
+2. `.cursor/rules/core.mdc` - 基本原則・技術スタック
+3. `.cursor/rules/ui-design.mdc` - デザインシステム・禁止事項
+4. `.cursor/rules/ui-language.mdc` - UI表記言語（日本語優先・装飾英語禁止）
 5. `.cursor/rules/architecture.mdc` - アーキテクチャ設計
+6. `.cursor/rules/file-splitting.mdc` - ファイル分割ルール（500行上限）
+7. `.cursor/rules/database.mdc` - データベース設計
+8. `.cursor/rules/security.mdc` - セキュリティ要件
+9. `.cursor/rules/testing.mdc` - テスト戦略
+10. `.cursor/rules/troubleshooting.mdc` - トラブルシューティング
+11. `.cursor/rules/resend-email.mdc` - Resendメール実装マニュアル
 
 ### ⚠️ 警告：部分的な確認は無効
 - 2つのファイルだけ見て「十分」と判断 → **違反**
@@ -54,7 +66,7 @@ alwaysApply: true
 
 ### 📝 実装開始の宣言
 開発を開始する際は、心の中で以下を宣言すること：
-「私は `.cursor/rules/` の全5ファイルを確認し、理解しました。プロジェクトルールを遵守して開発を開始します。」
+「私は `.cursor/rules/` のすべての `.mdc` ルールを確認し、理解しました。プロジェクトルールを遵守して開発を開始します。」
 
 ### 違反時の影響認識
 - ルール未確認での開発は、プロジェクト全体の品質低下を招く
@@ -134,11 +146,14 @@ alwaysApply: true
 
 #### フェーズ4: メール機能実装（お問い合わせフォーム等）
 ```
-1. 環境変数設定の確認
-   ├── APIキーが環境変数で適切に管理されているか
-   └── Vercel Serverless Function設定
+1. Resend実装の必須確認
+   ├── resend-email.mdc の完全確認（必須）
+   ├── 環境変数設定の確認
+   ├── Vercel Serverless Function設定
+   └── セキュリティ要件の確認
 
 2. メール機能実装
+   ├── api/resend/emails.js の実装
    ├── フロントエンドAPI層の実装
    ├── お問い合わせフォームの実装
    └── 自動返信・管理者通知の設定
@@ -404,9 +419,11 @@ await mcp_supabase_generate_typescript_types({
 □ .cursor/rules/ ディレクトリの全ファイルを確認
 □ ui-design.mdc のデザイン原則・禁止事項を確認
   └─ 特に「カードデザイン禁止」などの明確な制約
+□ ui-language.mdc（日本語優先・装飾英語禁止）を確認
 □ core.mdc の技術スタック・基本原則を確認
 □ architecture.mdc のディレクトリ構造を確認
 □ 禁止ライブラリリストを確認（lucide-react等）
+□ テスト駆動ルール：実装前にテストを作成し、実装後にテストを実行する
 ```
 
 ### 2. 実装優先順位
@@ -414,6 +431,25 @@ await mcp_supabase_generate_typescript_types({
 1. プロジェクト固有ルール (.cursor/rules/*.mdc)
 2. プロジェクト要件・仕様
 3. 一般的なベストプラクティス
+```
+
+## 🧪 テスト駆動ルール（必須）
+
+**修正・新規機能開発問わず、以下の順序を厳守すること。**
+
+### 実装前
+1. **テストを先に作成する**
+   - 新機能：期待する動作を検証するテストコードを書く
+   - バグ修正：バグを再現するテストコードを書く
+2. テストを提示し、承認を得てから実装を開始する
+
+### 実装後
+3. **作成したテストを実行する**
+4. **既存テストも全て実行し、他機能への影響がないことを確認する**
+
+### フロー
+```
+要件 → テスト作成 → 承認 → 実装 → テスト実行（新規＋既存）
 ```
 
 ## 🚀 開発フロー
@@ -472,6 +508,8 @@ await mcp_supabase_generate_typescript_types({
 
 ### Phase 4: 品質チェック
 ```
+□ 作成したテストを実行し、全て通過するか
+□ 既存テストを全て実行し、回帰がないか
 □ ESLint エラーがないか
 □ TypeScript 型エラーがないか
 □ プロジェクト固有の禁止事項に違反していないか
@@ -540,7 +578,8 @@ await mcp_supabase_generate_typescript_types({
 
 ### メール機能実装時の追加確認項目
 ```
-□ APIキーが環境変数で適切に管理されているか
+□ resend-email.mdc の全要件を満たしているか
+□ Resend APIキーが環境変数で適切に管理されているか
 □ Vercel Serverless Functionが正常に動作するか
 □ CORS設定が適切に行われているか
 □ お問い合わせフォームの自動返信が機能するか
@@ -573,7 +612,7 @@ await mcp_supabase_generate_typescript_types({
 3. チーム内での共有・議論
 4. 改善の実施
 
-### 重要な注意事項
+## 📝 重要な注意事項
 
 ### ルール参照の鉄則
 **必ず実装前に `.cursor/rules/` の全ファイルを確認すること。**
@@ -582,7 +621,7 @@ await mcp_supabase_generate_typescript_types({
 - 禁止ライブラリリスト
 - プロジェクト固有の命名規則
 - セキュリティ要件
-- メール実装要件（お問い合わせフォーム等）
+- resend-email.mdc のメール実装要件（お問い合わせフォーム等）
 
 ### 優先順位の明確化
 ```
