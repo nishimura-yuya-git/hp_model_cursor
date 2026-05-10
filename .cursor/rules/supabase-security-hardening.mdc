@@ -1,0 +1,225 @@
+---
+description: Supabase セキュリティ強化・脆弱性回避ルール
+globs:
+  - "**/*.sql"
+  - "**/supabase/**"
+  - "**/migrations/**"
+  - "**/*.ts"
+  - "**/*.tsx"
+alwaysApply: false
+---
+
+# Supabase Security Hardening Rules
+
+SupabaseでDB・RLS・RPC・Storage・Client実装を行う場合は、以下のセキュリティ落とし穴を必ず確認する。
+
+## 1. `service_role` をブラウザに絶対に出さない
+
+`service_role` や secret key はRLSを迂回するため、ブラウザ・モバイルアプリ・公開リポジトリに絶対に出さない。
+
+禁止:
+
+- `NEXT_PUBLIC_` 付き環境変数
+- `VITE_` 付き環境変数
+- フロントエンドコード
+- GitHubにコミットされる `.env`
+
+## 2. 権限カラムを本人に更新させない
+
+通常ユーザーに更新させないカラム:
+
+```text
+role
+permission
+is_admin
+organization_id
+user_id
+created_by
+approved_by
+paid_at
+重要な status 遷移
+```
+
+`profiles` に `role` を持つ場合、本人更新では `display_name` や `avatar_url` のみに制限する。
+
+```sql
+revoke all on public.profiles from anon, authenticated;
+
+grant select on public.profiles to authenticated;
+grant update (display_name, avatar_url, updated_at)
+on public.profiles to authenticated;
+```
+
+role変更は管理者専用RPCまたはサーバー側処理に限定する。
+
+## 3. `security definer` 関数は最小権限にする
+
+`security definer` 関数はRLSを迂回する可能性があるため、作成時に必ず以下を行う。
+
+```text
+□ set search_path = public または set search_path = '' を指定する
+□ 関数内のテーブル名はスキーマ付きで書く
+□ 入力値を検証する
+□ 返すデータを最小限にする
+□ execute権限を制限する
+□ anonに実行権限を与えない
+```
+
+```sql
+revoke all on function public.is_admin() from public;
+revoke all on function public.is_admin() from anon;
+grant execute on function public.is_admin() to authenticated;
+```
+
+管理者専用・サーバー専用の関数は `authenticated` にも安易にgrantしない。
+
+## 4. RPCは `security invoker` を基本にする
+
+RPC / Function は原則 `security invoker` を使う。
+`security definer` は、RLSを越える必要がある最小限の処理だけに使う。
+
+`security definer` RPCでは必ず以下を行う。
+
+- 引数の `user_id` を信用しない。
+- `auth.uid()` を使って実行者を判定する。
+- 対象レコードの所有者・組織所属を関数内で検証する。
+- `search_path` を固定する。
+- EXECUTE権限を制限する。
+- 返すデータを最小限にする。
+
+## 5. `anon` は公開データの読み取り専用を基本にする
+
+`anon` に許可してよい例:
+
+- 公開記事
+- 公開店舗情報
+- 公開メニュー
+- LP表示用データ
+
+`anon` に許可しない例:
+
+- `profiles`
+- `customers`
+- `reservations`
+- `payments`
+- `contracts`
+- `files`
+- `audit_logs`
+- `ai_requests`
+- `ai_outputs`
+
+`anon` に insert / update / delete を許可する場合は、スパム対策、レート制限、captcha、Edge Function経由を検討する。
+
+## 6. JWT `app_metadata` を過信しない
+
+`auth.jwt()` の `app_metadata` は高速だが、JWTが更新されるまで古い権限が残る可能性がある。
+
+即時性が必要な権限にはJWTだけを使わない。
+
+```text
+管理者権限の剥奪
+組織メンバーの削除
+契約停止
+強制ログアウト相当の制御
+セキュリティ事故時のアクセス遮断
+```
+
+即時反映が必要な認可は、DBテーブル + helper function で判定する。
+`raw_user_meta_data` はユーザーが更新できるため、認可判定に使わない。
+
+## 7. Storage path は推測されにくくする
+
+悪い例:
+
+```text
+uploads/user@example.com/contract.pdf
+uploads/1/contract.pdf
+```
+
+良い例:
+
+```text
+organizations/{organization_id}/files/{file_id}/{original_filename}
+users/{user_id}/files/{file_id}/{original_filename}
+```
+
+ファイル閲覧はStorage Policyと `files` テーブルのRLSを両方考慮する。
+署名付きURLを発行する場合は、有効期限を短くする。
+
+## 8. 論理削除テーブルのuniqueは部分indexにする
+
+悪い例:
+
+```sql
+email text unique
+```
+
+良い例:
+
+```sql
+create unique index unique_customers_email_active
+on public.customers(email)
+where deleted_at is null;
+```
+
+## 9. RLS条件で使うカラムにはindexを貼る
+
+RLS内で参照するカラムにはindexを検討する。
+
+```text
+user_id
+organization_id
+role
+deleted_at
+room_id
+project_id
+```
+
+```sql
+create index idx_organization_members_user_id
+on public.organization_members(user_id);
+
+create index idx_organization_members_organization_user
+on public.organization_members(organization_id, user_id);
+```
+
+RLSは全クエリに影響するため、権限判定用indexを軽視しない。
+
+## 10. RLSテスト観点を必ず出す
+
+RLS作成時は以下のテストケースも提案する。
+
+```text
+□ 未ログインユーザーはアクセスできない
+□ 自分のデータは閲覧できる
+□ 他人のデータは閲覧できない
+□ 自分のデータは作成できる
+□ 他人の user_id では作成できない
+□ 自分のデータは更新できる
+□ user_id / organization_id / role は不正変更できない
+□ 論理削除済みデータは通常ユーザーに見えない
+□ 管理者だけ必要なデータを見られる
+□ anon に不要な操作ができない
+```
+
+## 11. `profiles` 自動作成トリガー
+
+`auth.users` 作成時に `profiles` を作る場合は、trigger function に `security definer` と `search_path` を明示する。
+
+```sql
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (id, display_name)
+  values (new.id, new.raw_user_meta_data ->> 'display_name');
+  return new;
+end;
+$$;
+```
+
+`raw_user_meta_data` の値は信用しすぎない。
+role や権限には使わない。

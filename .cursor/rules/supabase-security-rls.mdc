@@ -1,0 +1,219 @@
+---
+description: Supabase RLS / 権限 / セキュリティ設計ルール
+globs:
+  - "**/*.sql"
+  - "**/supabase/**"
+  - "**/migrations/**"
+alwaysApply: false
+---
+
+# Supabase Security / RLS Rules
+
+Supabaseでは、フロントエンドから直接DBにアクセスされる可能性があるため、RLSと権限設計を必ずDB側で行う。
+
+## 1. RLSを必ず有効化する
+
+公開スキーマの業務テーブルは原則RLSを有効化する。
+
+```sql
+alter table public.profiles enable row level security;
+```
+
+RLSを有効にしただけではアクセスできないため、必ずPolicyも定義する。
+
+## 2. Policy設計で決めること
+
+```text
+□ SELECTできる人
+□ INSERTできる人
+□ UPDATEできる人
+□ DELETEできる人
+□ 自分のデータだけか
+□ 所属組織のデータまで見られるか
+□ 管理者だけ操作できるか
+□ 論理削除済みデータを見せるか
+```
+
+## 3. `using` と `with check`
+
+- `using`: 既存行にアクセスできる条件
+- `with check`: 作成・更新後の行が満たすべき条件
+
+INSERT / UPDATE では `with check` を忘れない。
+
+```sql
+create policy "ユーザーは自分のレコードを作成可能"
+on public.records
+for insert
+to authenticated
+with check (auth.uid() = user_id);
+```
+
+```sql
+create policy "ユーザーは自分のレコードを更新可能"
+on public.records
+for update
+to authenticated
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+```
+
+## 4. `service_role` 前提にしない
+
+- フロントエンドから `service_role` key を絶対に使わない。
+- 通常クライアント処理は anon key + RLS で守る。
+- `service_role` はサーバー側、Edge Functions、管理処理のみで使用する。
+- RLSを切ってアプリ側だけで制御しない。
+
+## 5. `revoke` / `grant` を明示する
+
+RLSだけでなく、PostgreSQL権限も最小権限にする。
+
+```sql
+revoke all on public.example_records from anon, authenticated;
+
+grant select on public.example_records to authenticated;
+grant insert on public.example_records to authenticated;
+grant update (title, status, metadata, updated_at, deleted_at)
+on public.example_records to authenticated;
+```
+
+`id`, `user_id`, `organization_id`, `created_at`, `role` などは通常ユーザーに更新させない。
+DELETEは原則grantしない。
+
+## 6. `profiles` 自身のRLSで `profiles` を直接参照しない
+
+`profiles` テーブル自身のRLS内で `profiles` を直接参照すると、再帰問題が起きる可能性がある。
+
+悪い例:
+
+```sql
+create policy "管理者は全プロフィールを閲覧可能"
+on public.profiles
+for select
+to authenticated
+using (
+  exists (
+    select 1
+    from public.profiles p
+    where p.id = auth.uid()
+      and p.role = 'admin'
+  )
+);
+```
+
+管理者判定は helper function または JWT `app_metadata` を使う。
+
+## 7. Helper Function
+
+複雑な権限判定や同一テーブル再帰を避ける場合は、`security definer` の helper function を使う。
+
+```sql
+create or replace function public.is_admin()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1
+    from public.profiles
+    where id = auth.uid()
+      and role = 'admin'
+      and deleted_at is null
+  );
+$$;
+```
+
+```sql
+create policy "管理者は全プロフィールを閲覧可能"
+on public.profiles
+for select
+to authenticated
+using (public.is_admin());
+```
+
+`security definer` では必ず `search_path`、入力検証、最小権限、EXECUTE権限制限を行う。
+
+## 8. JWT / `app_metadata`
+
+頻繁に変わらない認可情報は `auth.jwt()` の `app_metadata` を検討する。
+
+```sql
+(auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
+```
+
+```sql
+(auth.jwt() -> 'app_metadata' ->> 'organization_id')::uuid = organization_id
+```
+
+注意:
+
+- `raw_user_meta_data` はユーザー自身が更新できるため認可判定に使わない。
+- `app_metadata` はサーバー側でのみ更新する。
+- JWTは即時更新されない場合がある。
+- 権限剥奪や契約停止など即時反映が必要な認可は、DBテーブル + helper function を使う。
+
+## 9. 組織単位RLS
+
+組織データは `organization_members` などを使ってアクセス範囲を表現する。
+
+```sql
+create policy "組織メンバーは組織のレコードを閲覧可能"
+on public.records
+for select
+to authenticated
+using (
+  exists (
+    select 1
+    from public.organization_members om
+    where om.organization_id = records.organization_id
+      and om.user_id = auth.uid()
+  )
+);
+```
+
+更新時は `role` も見る。
+
+## 10. 論理削除とRLS
+
+`deleted_at` を使う場合、通常ユーザー向けRLSでは `deleted_at is null` を含める。
+
+```sql
+using (
+  auth.uid() = user_id
+  and deleted_at is null
+)
+```
+
+管理者だけ削除済みも見られる場合は別Policyで明示する。
+
+## 11. DELETE Policy
+
+業務データでは物理削除を基本的に許可しない。
+通常は `deleted_at` を更新する論理削除にする。
+
+DELETEを許可するのは、一時データ、下書き、通知、キャッシュ、完全に親へ従属するデータなどに限定する。
+
+## 12. Storage / Realtime
+
+- StorageはDBのRLSだけでなくStorage Policyも設計する。
+- Realtimeは見えてよい行だけが配信対象になる。
+- RLS条件に合わないINSERTイベントは購読者に届かない場合がある。
+- 大量更新されるログテーブルを安易にRealtime対象にしない。
+
+## 13. RLS最終チェック
+
+```text
+□ RLSが有効か
+□ SELECT / INSERT / UPDATE / DELETE のPolicyが明確か
+□ INSERT / UPDATE に with check があるか
+□ service_role 前提になっていないか
+□ profiles自身のRLSで profiles を直接参照していないか
+□ anon に不要な権限がないか
+□ authenticated に必要最小限の権限があるか
+□ user_id / organization_id の所有者チェックがあるか
+□ deleted_at is null を考慮しているか
+□ JWT app_metadata とDB参照の使い分けが適切か
+```

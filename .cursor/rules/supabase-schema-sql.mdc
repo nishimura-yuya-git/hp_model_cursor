@@ -1,0 +1,249 @@
+---
+description: Supabase / PostgreSQL のスキーマ・制約・インデックス設計ルール
+globs:
+  - "**/*.sql"
+  - "**/supabase/**"
+  - "**/migrations/**"
+alwaysApply: false
+---
+
+# Supabase Schema / SQL Rules
+
+Supabase / PostgreSQL のスキーマ設計では、アプリ側だけでなくDB側でも整合性を守る。
+
+## 1. 外部キーを必ず定義する
+
+リレーションがある場合は外部キーを定義する。
+
+```sql
+create table public.reservations (
+  id uuid primary key default gen_random_uuid(),
+  customer_id uuid not null references public.customers(id) on delete restrict,
+  store_id uuid not null references public.stores(id) on delete restrict,
+  reserved_at timestamptz not null,
+  status text not null default 'pending',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz
+);
+```
+
+外部キーには原則インデックスを貼る。
+
+## 2. `on delete` の挙動を明確にする
+
+- `cascade`: 完全に親へ従属する中間テーブル・一時データ向け。
+- `restrict`: 注文、予約、契約、決済、履歴など業務データ向け。
+- `set null`: 担当者など、親削除後も履歴を残したい任意関連向け。
+
+業務データでは安易に `cascade` しない。
+
+## 3. 論理削除を基本にする
+
+予約・注文・契約・顧客・重要な業務データは物理削除しない。
+
+```sql
+deleted_at timestamptz
+```
+
+通常取得、RLS、Viewでは `deleted_at is null` を考慮する。
+
+## 4. status / enum / master table の使い分け
+
+### PostgreSQL enum
+
+ほぼ変わらない分類に使う。
+
+例: 性別、認証プロバイダ、支払方法種別、ファイル種別、固定ロール。
+
+頻繁に変わる業務ステータスには使わない。
+
+### text + check制約
+
+状態遷移はあるが、値が固定されているものに使う。
+
+```sql
+status text not null default 'pending'
+  check (status in ('pending', 'confirmed', 'cancelled', 'completed'))
+```
+
+### master table
+
+管理画面で追加・編集したいもの、表示名・並び順・色・説明が必要なものに使う。
+
+```sql
+create table public.reservation_statuses (
+  code text primary key,
+  name text not null,
+  sort_order integer not null default 0,
+  color text,
+  description text,
+  is_active boolean not null default true
+);
+```
+
+## 5. 金額はfloatを使わない
+
+日本円のみならintegerを使う。
+
+```sql
+amount_yen integer not null check (amount_yen >= 0),
+tax_yen integer not null default 0 check (tax_yen >= 0),
+total_yen integer generated always as (amount_yen + tax_yen) stored
+```
+
+小数が必要なら `numeric` を使う。
+
+```sql
+amount numeric(12, 2) not null,
+currency text not null default 'JPY'
+```
+
+単位はカラム名に含める。
+
+## 6. JSONBを乱用しない
+
+JSONBに入れてよいもの:
+
+- AI出力
+- 外部APIレスポンス
+- 可変メタデータ
+- UI設定
+- 検索・集計しない補足情報
+- ログの before / after
+
+JSONBに入れないもの:
+
+- 検索条件
+- 集計対象
+- 外部キー
+- ステータス
+- 権限
+- 頻繁に更新する業務データ
+
+検索・JOIN・集計するなら通常カラムにする。
+
+## 7. インデックス設計
+
+以下にはインデックスを検討する。
+
+```text
+外部キー
+user_id
+organization_id
+store_id
+resource_id
+status
+created_at
+reserved_at / start_at / end_at
+deleted_at
+slug
+email
+RLS条件で使うカラム
+```
+
+論理削除テーブルでは部分インデックスを検討する。
+
+```sql
+create index idx_reservations_active_store_id
+on public.reservations(store_id)
+where deleted_at is null;
+```
+
+## 8. 一意制約はDB側に置く
+
+重複してはいけないものはアプリ側だけで防がない。
+
+```sql
+create unique index unique_store_slug
+on public.stores(slug)
+where deleted_at is null;
+```
+
+論理削除テーブルのuniqueは部分indexにする。
+
+## 9. NULL設計
+
+基本は `not null` を優先する。
+
+NULLを許可するのは、未入力が業務上あり得る、後から設定される、キャンセル時だけ入る、決済完了時だけ入る、担当者削除後も履歴を残す場合などに限定する。
+
+## 10. 多対多は中間テーブル
+
+多対多をカンマ区切りやJSONBで持たない。
+
+```sql
+create table public.project_members (
+  project_id uuid not null references public.projects(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  role text not null default 'member',
+  created_at timestamptz not null default now(),
+  primary key (project_id, user_id)
+);
+```
+
+## 11. マスターとトランザクションを分ける
+
+- マスター: `profiles`, `stores`, `products`, `menus`, `plans`, `categories`
+- トランザクション: `reservations`, `orders`, `payments`, `contracts`, `messages`, `audit_logs`
+
+マスターは定義、トランザクションは発生した事実。
+
+## 12. 履歴・監査ログ
+
+ステータス変更、予約変更、契約プラン変更、料金変更、担当者変更、承認フロー、AI生成結果、ユーザー操作は履歴テーブルを検討する。
+
+重要な業務データでは `audit_logs` を検討する。
+
+```sql
+create table public.audit_logs (
+  id uuid primary key default gen_random_uuid(),
+  actor_user_id uuid references auth.users(id) on delete set null,
+  action text not null,
+  target_table text not null,
+  target_id uuid,
+  before_data jsonb,
+  after_data jsonb,
+  created_at timestamptz not null default now()
+);
+```
+
+## 13. View / RPC
+
+複雑なJOINが多い場合はViewを検討する。
+ViewのRLS・権限には注意し、必要に応じて `security_invoker = true` を検討する。
+
+複雑な更新処理やトランザクションが必要な場合はRPCを検討する。
+Function内でも権限・RLS・`security definer` の扱いに注意する。
+
+## 14. DB制約で守る
+
+以下はアプリ側だけでなくDB側でも守る。
+
+```text
+NOT NULL
+unique
+foreign key
+check
+status制約
+数量が0以上
+金額が0以上
+予約重複
+所有者不正変更
+```
+
+## 15. SQL出力時の必須項目
+
+```text
+□ create table
+□ primary key
+□ foreign key
+□ not null / default / check
+□ created_at / updated_at / deleted_at
+□ updated_at trigger
+□ index / unique
+□ grant / revoke
+□ RLS enable
+□ policy
+□ 必要なら seed
+```

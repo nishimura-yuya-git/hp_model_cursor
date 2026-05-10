@@ -1,0 +1,219 @@
+---
+description: Supabase 業務パターン別DB設計ルール
+globs:
+  - "**/*.sql"
+  - "**/supabase/**"
+  - "**/migrations/**"
+alwaysApply: false
+---
+
+# Supabase Business Pattern Rules
+
+予約・注文・契約・AI出力・ファイル・通知などは、後からマスターが変わっても当時の事実が壊れない設計にする。
+
+## 1. 注文・予約・契約はスナップショットを持つ
+
+後からマスターデータが変わっても、当時の事実が変わらないようにする。
+
+```sql
+create table public.order_items (
+  id uuid primary key default gen_random_uuid(),
+  order_id uuid not null references public.orders(id) on delete restrict,
+  product_id uuid references public.products(id) on delete set null,
+  product_name_snapshot text not null,
+  unit_price_yen_snapshot integer not null check (unit_price_yen_snapshot >= 0),
+  quantity integer not null check (quantity > 0),
+  created_at timestamptz not null default now()
+);
+```
+
+予約メニューも `menu_name_snapshot`, `duration_minutes_snapshot`, `price_yen_snapshot` などを検討する。
+
+## 2. 予約システム
+
+予約系では以下を検討する。
+
+```text
+profiles
+customers
+stores
+resources
+reservation_menus
+reservation_slots
+reservations
+reservation_status_histories
+notifications
+```
+
+## 3. 予約対象リソースを分ける
+
+スポーツ施設、コート、部屋、設備、担当者など、同時刻に複数予約があり得る場合は `resources` を作る。
+
+```sql
+create table public.resources (
+  id uuid primary key default gen_random_uuid(),
+  store_id uuid not null references public.stores(id) on delete cascade,
+  name text not null,
+  resource_type text not null,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz
+);
+```
+
+予約は `store_id` だけでなく `resource_id` に紐づける。
+
+## 4. 予約時間は `start_at` / `end_at`
+
+予約が幅を持つ場合、`reserved_at` だけでは不足する。
+
+```sql
+start_at timestamptz not null,
+end_at timestamptz not null,
+check (end_at > start_at)
+```
+
+単純な重複防止:
+
+```sql
+create unique index unique_resource_start_at
+on public.reservations(resource_id, start_at)
+where deleted_at is null
+  and status in ('pending', 'confirmed');
+```
+
+時間帯の重複まで厳密に防ぐ場合は、range型 / exclusion constraint を検討する。
+
+## 5. 契約・サブスクリプション
+
+契約やサブスクリプションは現在値と履歴を分ける。
+
+```text
+subscriptions
+subscription_histories
+plans
+invoices
+payments
+```
+
+プラン変更・料金変更・契約停止は履歴に残す。
+
+## 6. 決済
+
+決済では金額・税額・通貨・外部決済IDを明確にする。
+
+```sql
+amount_yen integer not null check (amount_yen >= 0),
+tax_yen integer not null default 0 check (tax_yen >= 0),
+total_yen integer generated always as (amount_yen + tax_yen) stored,
+currency text not null default 'JPY',
+status text not null default 'unpaid'
+  check (status in ('unpaid', 'paid', 'failed', 'refunded')),
+external_payment_id text,
+paid_at timestamptz
+```
+
+金額にfloatを使わない。
+
+## 7. AI機能
+
+AIの生成結果と確定済み業務データを分ける。
+
+悪い例:
+
+```text
+AI出力を直接 contracts や reports に上書きする
+```
+
+良い例:
+
+```text
+ai_requests
+ai_outputs
+人間レビュー
+approved_at
+確定後に業務テーブルへ反映
+```
+
+AI出力には `draft`, `reviewing`, `approved`, `rejected` などの状態を持たせる。
+
+## 8. Supabase Storage
+
+ファイル本体はDBに入れない。DBにはメタデータだけ保存する。
+
+```sql
+create table public.files (
+  id uuid primary key default gen_random_uuid(),
+  owner_user_id uuid references auth.users(id) on delete set null,
+  organization_id uuid references public.organizations(id) on delete set null,
+  bucket_name text not null,
+  storage_path text not null,
+  original_filename text not null,
+  mime_type text,
+  size_bytes bigint,
+  related_table text,
+  related_id uuid,
+  created_at timestamptz not null default now()
+);
+```
+
+Storage Policy と `files` テーブルRLSの両方を考慮する。
+
+## 9. 通知
+
+通知はユーザー別に既読状態を持たせる。
+
+```sql
+create table public.notifications (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  title text not null,
+  body text,
+  type text not null,
+  is_read boolean not null default false,
+  read_at timestamptz,
+  created_at timestamptz not null default now()
+);
+```
+
+RLSでは自分の通知だけを閲覧できるようにする。
+
+## 10. チャット・メッセージ
+
+チャットがある場合:
+
+```text
+chat_rooms
+chat_room_members
+messages
+```
+
+RLSでは「room member だけが見られる」ようにする。
+Realtime対象は更新頻度と購読範囲を絞る。
+
+## 11. created_by / updated_by
+
+誰が作成・更新したか必要な場合は持たせる。
+
+```sql
+created_by uuid references auth.users(id) on delete set null
+updated_by uuid references auth.users(id) on delete set null
+```
+
+操作履歴が重要なら `audit_logs` にする。
+
+## 12. 業務パターン設計時のチェック
+
+```text
+□ 当時の名称・価格・条件をスナップショットしているか
+□ 履歴が必要なものを履歴テーブルに分けているか
+□ 論理削除が必要か
+□ 予約対象リソースが必要か
+□ 同時刻に複数予約があり得るか
+□ start_at / end_at が必要か
+□ 決済金額に税額・合計があるか
+□ AI出力と確定データを分けているか
+□ ファイル本体をDBに入れていないか
+□ 通知・チャットはRLSとRealtimeを考慮しているか
+```

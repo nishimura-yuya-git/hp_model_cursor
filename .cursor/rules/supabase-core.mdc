@@ -1,0 +1,196 @@
+---
+description: Supabase / PostgreSQL の基本設計ルール
+globs:
+  - "**/*.sql"
+  - "**/supabase/**"
+  - "**/migrations/**"
+alwaysApply: false
+---
+
+# Supabase Core Rules
+
+Supabase / PostgreSQL のDB設計・SQL作成・Supabase連携では、RLS / Policy / Constraint / Index まで含めて完成形で考える。
+
+## 1. Supabase前提の基本方針
+
+- PostgreSQL の機能を活用する。
+- Row Level Security を前提にする。
+- `auth.users` と業務用 `profiles` を分ける。
+- フロントエンドから直接DBアクセスされる可能性を考慮する。
+- セキュリティルールをDB側で守る。
+- API側だけで権限チェックを完結させない。
+- Storage、Edge Functions、Realtime の利用可能性を考慮する。
+- `service_role` 前提の通常機能を作らない。
+
+## 2. テーブルから始めない
+
+DB設計前に必ず整理する。
+
+```text
+□ 誰が使うのか
+□ どの画面・APIで使うのか
+□ どの業務フローで使うのか
+□ 登録・編集・削除・検索・集計する情報は何か
+□ 誰がどのデータを見られるか
+□ 誰がどのデータを変更できるか
+□ 個人所有データか、組織所有データか
+□ 履歴・監査ログが必要か
+□ 分析・通知・外部連携が必要か
+```
+
+Supabaseでは特に「誰がアクセスできるか」を最初に考える。
+
+## 3. `auth.users` と `profiles` を分ける
+
+Supabase Auth のユーザー情報は `auth.users` にある。
+業務で使うユーザー情報は `public.profiles` などの別テーブルに持たせる。
+
+```sql
+create table public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  display_name text,
+  avatar_url text,
+  role text not null default 'user'
+    check (role in ('user', 'admin')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz
+);
+```
+
+`role` や権限カラムを持つ場合、本人更新で変更できないようにする。
+
+## 4. 主キーは原則 UUID
+
+Supabaseでは主キーは原則 `uuid` を使う。
+
+```sql
+id uuid primary key default gen_random_uuid()
+```
+
+`profiles` のみ、`auth.users(id)` と同じ UUID を主キーにしてよい。
+
+```sql
+id uuid primary key references auth.users(id) on delete cascade
+```
+
+## 5. 基本カラム
+
+業務テーブルには原則以下を持たせる。
+
+```sql
+id uuid primary key default gen_random_uuid(),
+created_at timestamptz not null default now(),
+updated_at timestamptz not null default now(),
+deleted_at timestamptz
+```
+
+中間テーブルでは複合主キーを使ってよい。
+
+```sql
+primary key (organization_id, user_id)
+```
+
+## 6. 日時は `timestamptz`
+
+日時カラムには原則 `timestamptz` を使う。
+
+```sql
+created_at timestamptz not null default now()
+reserved_at timestamptz not null
+paid_at timestamptz
+cancelled_at timestamptz
+```
+
+日付だけの場合は `date` を使う。
+
+```sql
+birth_date date
+start_date date
+end_date date
+```
+
+日時は `_at`、日付だけなら `_date` を使う。
+
+## 7. `updated_at` はトリガーで自動更新する
+
+```sql
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+```
+
+```sql
+create trigger set_profiles_updated_at
+before update on public.profiles
+for each row
+execute function public.set_updated_at();
+```
+
+## 8. 命名規則
+
+- テーブル名は複数形の `snake_case`。
+- カラム名も `snake_case`。
+- boolean は `is_` / `has_` / `can_` で意味を明確にする。
+- 曖昧な `type`, `status`, `value`, `data`, `flag` は避ける。
+
+良い例:
+
+```text
+profiles
+reservation_menus
+order_items
+monthly_price_yen
+payment_status
+is_active
+```
+
+## 9. 所有者を最初に決める
+
+個人所有:
+
+```sql
+user_id uuid not null references auth.users(id)
+```
+
+組織所有:
+
+```sql
+organization_id uuid not null references public.organizations(id)
+```
+
+店舗・施設・チームに紐づく場合も、最終的にRLSでアクセス可否を表現できる形にする。
+
+## 10. スキーマの使い分け
+
+通常のアプリ用テーブルは `public` スキーマに作る。
+
+以下は `private` / `internal` スキーマも検討する。
+
+- 管理者専用処理
+- 内部処理
+- ログ
+- 外部連携用一時データ
+- AI処理の中間データ
+- セキュアな集計処理
+
+## 11. 基本方針
+
+```text
+□ RLSでデータアクセスを守る
+□ auth.users と profiles を分ける
+□ 業務上の事実を正しく保存する
+□ 外部キー・制約・インデックスでDB側の整合性を守る
+□ UUIDを基本にする
+□ フロントから直接アクセスされても安全な設計にする
+□ 過度にJSONBへ逃げない
+□ 予約・注文・契約などは当時の状態をスナップショットする
+□ 履歴・監査ログを必要に応じて残す
+□ 作りすぎず、後から拡張できる形にする
+```

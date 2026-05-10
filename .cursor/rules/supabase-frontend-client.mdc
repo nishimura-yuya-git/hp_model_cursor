@@ -1,0 +1,188 @@
+---
+description: Supabase Client / TypeScript 実装ルール
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+alwaysApply: false
+---
+
+# Supabase Frontend Client Rules
+
+Supabase Client を使うフロントエンド実装では、RLS前提で安全にデータアクセスする。
+
+## 1. `service_role` を使わない
+
+フロントエンドでは絶対に `service_role` key を使わない。
+使ってよいのは anon key のみ。
+
+禁止:
+
+- `NEXT_PUBLIC_` / `VITE_` 付き環境変数で secret を出す。
+- ブラウザに `service_role` key が露出する構成。
+- RLSを避けるために `service_role` を使う設計。
+
+## 2. 型生成を前提にする
+
+SupabaseのDB型をTypeScriptに生成して使う。
+
+```ts
+import type { Database } from "@/types/supabase";
+
+type Reservation = Database["public"]["Tables"]["reservations"]["Row"];
+type ReservationInsert = Database["public"]["Tables"]["reservations"]["Insert"];
+type ReservationUpdate = Database["public"]["Tables"]["reservations"]["Update"];
+```
+
+手書き型とDB型がズレないようにする。
+
+## 3. 認証ユーザーを確認する
+
+ユーザー操作でDBに書き込む場合は、認証ユーザーの存在を確認する。
+
+```ts
+const {
+  data: { user },
+  error: userError,
+} = await supabase.auth.getUser();
+
+if (userError || !user) {
+  throw new Error("ログインが必要です");
+}
+```
+
+## 4. エラー処理を必ず書く
+
+```ts
+const { data, error } = await supabase
+  .from("reservations")
+  .select("id, reserved_at, status");
+
+if (error) {
+  console.error(error);
+  throw error;
+}
+```
+
+エラーを握りつぶさない。
+
+## 5. `select("*")` を避ける
+
+必要なカラムだけ取得する。
+
+```ts
+.select("id, reserved_at, status, customer_id, store_id")
+```
+
+リレーション取得も必要最小限にする。
+
+## 6. `deleted_at` を考慮する
+
+論理削除テーブルでは通常の一覧・詳細取得で `deleted_at is null` を考慮する。
+
+```ts
+const { data, error } = await supabase
+  .from("reservations")
+  .select("id, reserved_at, status")
+  .is("deleted_at", null)
+  .order("reserved_at", { ascending: true });
+```
+
+## 7. paginationを前提にする
+
+大量データの一覧はページングする。
+
+```ts
+const { data, error } = await supabase
+  .from("reservations")
+  .select("id, reserved_at, status", { count: "exact" })
+  .is("deleted_at", null)
+  .order("reserved_at", { ascending: false })
+  .range(0, 49);
+```
+
+`count: "exact"` は重くなる場合があるため、必要な画面だけで使う。
+
+## 8. insert / update の所有者操作
+
+`user_id` は原則ログインユーザーのIDを使う。
+
+```ts
+await supabase.from("example_records").insert({
+  user_id: user.id,
+  title,
+});
+```
+
+通常の更新で `user_id` や `organization_id` を変更しない。
+所有者変更や権限変更は専用処理にする。
+
+## 9. `single` / `maybeSingle`
+
+必ず1件存在する前提なら `single()`。
+存在しない可能性があるなら `maybeSingle()`。
+
+## 10. UIバリデーションとDB制約を両方使う
+
+UXのためにフロントでも検証する。
+ただし最終的な整合性はDB制約とRLSで守る。
+
+例:
+
+- 必須入力
+- 金額が0以上
+- 数量が1以上
+- 予約終了時刻が開始時刻より後
+- ステータス値が許可範囲内
+
+## 11. RPCを使う場合
+
+複数テーブル同時更新やトランザクションが必要な処理はRPCを検討する。
+
+```ts
+const { data, error } = await supabase.rpc("confirm_reservation", {
+  reservation_id: reservationId,
+});
+
+if (error) {
+  console.error(error);
+  throw error;
+}
+```
+
+`security definer` RPCの安全性は別ルールで確認する。
+
+## 12. Realtime購読
+
+購読範囲を絞る。
+
+```ts
+supabase.channel(`room:${roomId}`).on(
+  "postgres_changes",
+  {
+    event: "INSERT",
+    schema: "public",
+    table: "messages",
+    filter: `room_id=eq.${roomId}`,
+  },
+  handler
+);
+```
+
+RLSで見えない行は配信されない可能性がある。
+
+## 13. フロント実装チェック
+
+```text
+□ service_role を使っていないか
+□ 型生成された型を使っているか
+□ 認証ユーザーを確認しているか
+□ error を処理しているか
+□ select("*") を避けているか
+□ deleted_at is null を考慮しているか
+□ pagination があるか
+□ count を乱用していないか
+□ insert / update で user_id や organization_id を不正に扱っていないか
+□ RLSに依存しつつ、UX用バリデーションも行っているか
+```

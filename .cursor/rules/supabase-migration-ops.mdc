@@ -1,0 +1,197 @@
+---
+description: Supabase migration / seed / 運用ルール
+globs:
+  - "**/*.sql"
+  - "**/supabase/migrations/**"
+  - "**/supabase/seed.sql"
+alwaysApply: false
+---
+
+# Supabase Migration / Ops Rules
+
+SupabaseのSQLは一回限りのメモではなく、migrationとして管理する。
+
+## 1. Migration前提でSQLを書く
+
+```text
+□ 再実行できるか
+□ 既存データに影響しないか
+□ 制約追加時に既存データが壊れないか
+□ 本番適用順序は安全か
+□ ロールバック方針があるか
+□ seed と schema を混ぜていないか
+```
+
+## 2. Supabase CLI を前提にする
+
+新しいmigrationは Supabase CLI で作る。
+
+```bash
+supabase migration new create_example_records
+```
+
+migrationファイルはタイムスタンプ付きで管理する。
+
+```text
+supabase/migrations/20260506000000_create_example_records.sql
+```
+
+## 3. 本番DBに直接SQLを貼る前提にしない
+
+原則:
+
+```text
+migrationを作る
+  ↓
+PRでレビューする
+  ↓
+local / staging で確認する
+  ↓
+本番に適用する
+```
+
+SQL Editorでの直接実行は、緊急対応や検証時に限定する。
+
+## 4. `db diff` / `db push`
+
+`supabase db diff` は差分確認に使えるが、結果をそのまま信用しない。
+
+確認すること:
+
+- 不要な変更が混ざっていないか
+- 既存データを壊さないか
+- RLS / policy / grant が含まれているか
+- index / unique / check が含まれているか
+- seed と schema が混ざっていないか
+
+本番環境に安易に `supabase db push` しない。
+
+## 5. 既存データがある前提で制約を追加する
+
+既存テーブルに `not null`, `unique`, `check`, `foreign key` を追加する場合は、既存データが制約に違反しないか確認する。
+
+悪い例:
+
+```sql
+alter table public.customers
+alter column email set not null;
+```
+
+必要なら段階的に行う。
+
+```text
+NULLデータを補正する
+  ↓
+制約を追加する
+  ↓
+アプリ側の入力も修正する
+```
+
+## 6. 破壊的変更は段階的に行う
+
+カラム削除、rename、型変更は破壊的変更。
+
+推奨手順:
+
+```text
+新カラムを追加
+  ↓
+アプリを新カラム対応
+  ↓
+データ移行
+  ↓
+旧カラム参照を停止
+  ↓
+一定期間後に旧カラム削除
+```
+
+rename時は、Supabase Client、RLS、View、Function、Trigger、Index、Generated Types、Edge Functions、Realtime購読を確認する。
+
+## 7. Seedデータを分ける
+
+マスターデータや初期データは seed として分ける。
+
+```sql
+insert into public.reservation_statuses (code, name, sort_order)
+values
+  ('pending', '仮予約', 1),
+  ('confirmed', '確定', 2),
+  ('cancelled', 'キャンセル', 3),
+  ('completed', '完了', 4)
+on conflict (code) do update
+set
+  name = excluded.name,
+  sort_order = excluded.sort_order;
+```
+
+開発用サンプルデータを本番migrationに混ぜない。
+
+## 8. Migrationに含めるべきもの
+
+新しい業務テーブルを作るmigrationには、原則以下を含める。
+
+```text
+□ create table
+□ primary key
+□ foreign key
+□ not null / default / check
+□ created_at / updated_at / deleted_at
+□ updated_at trigger
+□ index / unique
+□ grant / revoke
+□ RLS enable
+□ policy
+□ 必要なら seed
+```
+
+## 9. SQLテンプレート
+
+```sql
+create table public.example_records (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  title text not null,
+  status text not null default 'active'
+    check (status in ('active', 'inactive')),
+  metadata jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz
+);
+
+create trigger set_example_records_updated_at
+before update on public.example_records
+for each row
+execute function public.set_updated_at();
+
+create index idx_example_records_user_id
+on public.example_records(user_id);
+
+create index idx_example_records_active_user_id
+on public.example_records(user_id)
+where deleted_at is null;
+
+revoke all on public.example_records from anon, authenticated;
+grant select, insert on public.example_records to authenticated;
+grant update (title, status, metadata, updated_at, deleted_at)
+on public.example_records to authenticated;
+
+alter table public.example_records enable row level security;
+```
+
+Policyは対象業務に合わせて必ず追加する。
+
+## 10. Migration最終チェック
+
+```text
+□ schema と seed が分離されているか
+□ 既存データを壊さないか
+□ 破壊的変更がないか
+□ RLSが有効か
+□ policyがあるか
+□ grant / revoke が明示されているか
+□ index があるか
+□ unique / check / foreign key があるか
+□ updated_at trigger があるか
+□ 本番適用前にレビューできる形になっているか
+```
