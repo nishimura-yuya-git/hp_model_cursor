@@ -433,6 +433,16 @@ await mcp_supabase_generate_typescript_types({
 3. 一般的なベストプラクティス
 ```
 
+### 3. パッケージ管理（pnpm固定）
+```
+□ パッケージマネージャは pnpm のみを使用する
+□ npm / npx / yarn は使用しない
+□ package-lock.json / yarn.lock を作成・更新しない
+□ 依存関係を追加する場合、公開から3日（4320分）以内のパッケージを使わない
+□ .npmrc の minimum-release-age=4320 を維持する
+□ 依存関係変更後は pnpm install → pnpm run build → pnpm test の順で確認する
+```
+
 ## 🧪 テスト駆動ルール（必須）
 
 **修正・新規機能開発問わず、以下の順序を厳守すること。**
@@ -553,13 +563,14 @@ await mcp_supabase_generate_typescript_types({
    # キャッシュクリア
    rm -rf node_modules/.vite
    rm -rf dist
-   npm install
+   rm -f package-lock.json yarn.lock
+   pnpm install
    ```
 
 3. **型エラー**
    ```bash
    # 型チェック
-   npx tsc --noEmit
+   pnpm exec tsc --noEmit
    ```
 
 ## 📊 実装後チェックリスト
@@ -568,6 +579,11 @@ await mcp_supabase_generate_typescript_types({
 ```
 □ プロジェクト固有ルールに準拠しているか
 □ 禁止事項に違反していないか
+□ npm / npx / yarn を使っていないか
+□ package-lock.json / yarn.lock が生成されていないか
+□ pnpm-lock.yaml が正として更新されているか
+□ 公開3日以内のパッケージを追加していないか
+□ pnpm install / pnpm run build / pnpm test を実行したか
 □ デザイン原則に従っているか
 □ セキュリティ要件を満たしているか
 □ パフォーマンスが適切か

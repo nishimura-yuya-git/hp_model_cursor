@@ -17,7 +17,19 @@ alwaysApply: true
 - Deployment: Vercel
 - Icons: **カスタムSVG**
 - Fonts: Google Fonts (Inter, Playfair Display)
-- Package Manager: npm (安定性重視)
+- Package Manager: **pnpm 固定**（npm / yarn は使用禁止）
+
+## 📦 パッケージ管理ルール（pnpm必須）
+
+- 依存関係の追加・削除・更新・インストールは必ず `pnpm` を使う。
+- `npm install`、`npm run`、`npm audit`、`npx`、`yarn`、`package-lock.json` の新規作成・更新は禁止。
+- 新しいパッケージを追加する場合は、公開から3日（4320分）以上経過したバージョンだけを使う。
+- 公開から3日以内のパッケージは、セキュリティリスク・サプライチェーン攻撃対策として採用しない。
+- `.npmrc` に `minimum-release-age=4320` を設定し、pnpmの最小リリース経過時間ポリシーを有効にする。
+- `package.json` には `packageManager` を明記し、Corepack経由でもpnpmを使う。
+- ロックファイルは `pnpm-lock.yaml` のみを正とする。`package-lock.json` や `yarn.lock` が生成された場合は削除する。
+- 依存関係変更後は必ず `pnpm install` → `pnpm run build` → `pnpm test` の順で動作確認する。
+- テストスクリプトが未定義の場合は、`pnpm test` が lint / type-check / 禁止ライブラリ確認を実行するように整備してから確認する。
 
 ## 🚫 絶対使用禁止ライブラリ・パッケージ
 
@@ -60,11 +72,11 @@ rm -rf dist
 
 # 2. 依存関係の完全再インストール
 rm -rf node_modules
-rm package-lock.json
-npm install
+rm -f package-lock.json yarn.lock
+pnpm install
 
 # 3. 開発サーバー再起動
-npm run dev
+pnpm run dev
 
 # 4. ブラウザキャッシュクリア
 # Chrome: Ctrl+Shift+R (強制リロード)
@@ -150,8 +162,9 @@ export default defineConfig({
 
 ### 開発サーバーが起動しない場合
 1. `rm -rf node_modules .vite dist`
-2. `npm install`
-3. `npm run dev`
+2. `rm -f package-lock.json yarn.lock`
+3. `pnpm install`
+4. `pnpm run dev`
 
 ### 白い画面が表示される場合
 1. ブラウザの開発者ツールでエラーを確認
@@ -161,4 +174,4 @@ export default defineConfig({
 ### ビルドエラーが発生する場合
 1. TypeScript型エラーを確認
 2. 未使用のインポートを削除
-3. `npm run build` で詳細エラーを確認
+3. `pnpm run build` で詳細エラーを確認

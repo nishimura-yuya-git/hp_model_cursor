@@ -71,7 +71,9 @@ Playwright MCP に投げる際、以下の情報をセットで渡すこと：
 
 ## プロジェクト固有情報
 
-- **開発サーバー**: `http://localhost:5173`（`npm run dev`）
+- **開発サーバー**: `http://localhost:5173`（`pnpm run dev`）
+- **パッケージ管理**: `pnpm` のみ使用する。`npm` / `npx` / `yarn` は禁止。
+- **依存関係変更後の確認**: `pnpm install` → `pnpm run build` → `pnpm test` を必ず実行する。
 - **テストスキル**: `.cursor/skills/playwright-mcp-testing/SKILL.md`
 - **プロジェクトコマンド**: `.cursor/commands/playwright-mcp-test.md`
 

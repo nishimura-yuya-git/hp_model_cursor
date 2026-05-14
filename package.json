@@ -4,14 +4,16 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "preinstall": "node -e \"const ua=process.env.npm_config_user_agent||''; if(!ua.startsWith('pnpm/')) { console.error('このプロジェクトではpnpmのみ使用してください。npm/yarnは禁止です。'); process.exit(1); }\"",
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
     "type-check:watch": "tsc --noEmit --watch",
-    "check:forbidden-libs": "bash scripts/check-forbidden-libs.sh",
-    "security:audit": "npm audit --audit-level=moderate"
+    "check:forbidden-libs": "node -e \"const fs=require('fs'); const p=JSON.parse(fs.readFileSync('package.json','utf8')); const deps={...(p.dependencies||{}),...(p.devDependencies||{})}; const banned=['lucide-react','@heroicons/react','react-icons','feather-icons','@fortawesome/react-fontawesome']; const found=banned.filter((name)=>deps[name]); if(found.length){console.error('禁止ライブラリが含まれています: '+found.join(', ')); process.exit(1);} console.log('禁止ライブラリは検出されませんでした。');\"",
+    "security:audit": "pnpm audit --audit-level=moderate",
+    "test": "pnpm run lint && pnpm run type-check && pnpm run check:forbidden-libs"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -32,5 +34,6 @@
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.3.0",
     "vite": "^5.4.2"
-  }
+  },
+  "packageManager": "pnpm@10.16.0"
 }

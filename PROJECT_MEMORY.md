@@ -16,7 +16,7 @@
 | 主な利用者 | `[管理者 / スタッフ / 顧客 / 外部ユーザーなど]` |
 | 技術スタック | `[例: React / TypeScript / Supabase / Vercel]` |
 | 本番環境 | `[デプロイ先・本番URL・環境名]` |
-| パッケージマネージャ | `[npm / pnpm / yarn など]` |
+| パッケージマネージャ | `pnpm` 固定（`npm` / `npx` / `yarn` 禁止） |
 | 最重要領域 | `[売上 / 在庫 / 勤怠 / 給与 / 決済 / 予約 / 顧客管理など]` |
 
 ---
@@ -160,6 +160,15 @@ DB上の確定・集計テーブル
 - 手動修正フィールドは `[manual_fields / locked_fields / override_flags]` で明示する
 - 自動再計算は保護対象を上書きしない
 - 手動修正を解除する操作は明示的に用意する
+
+### 6.4 パッケージ管理（2026-05-14 決定）
+
+- このプロジェクトのパッケージマネージャは `pnpm` に固定する。
+- `npm` / `npx` / `yarn` は使用しない。`package-lock.json` / `yarn.lock` は作成・更新しない。
+- 新しいパッケージを追加する場合は、公開から3日（4320分）以上経過したバージョンのみ採用する。
+- `.npmrc` の `minimum-release-age=4320` を維持し、公開直後パッケージによるサプライチェーンリスクを避ける。
+- 依存関係変更後は `pnpm install` → `pnpm run build` → `pnpm test` の順で確認する。
+- 関連: `package.json`, `.npmrc`, `pnpm-lock.yaml`, `.cursor/rules/core.mdc`, `.cursor/rules/workflow.mdc`
 
 ---
 
