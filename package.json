@@ -13,7 +13,11 @@
     "type-check:watch": "tsc --noEmit --watch",
     "check:forbidden-libs": "node -e \"const fs=require('fs'); const p=JSON.parse(fs.readFileSync('package.json','utf8')); const deps={...(p.dependencies||{}),...(p.devDependencies||{})}; const banned=['lucide-react','@heroicons/react','react-icons','feather-icons','@fortawesome/react-fontawesome']; const found=banned.filter((name)=>deps[name]); if(found.length){console.error('禁止ライブラリが含まれています: '+found.join(', ')); process.exit(1);} console.log('禁止ライブラリは検出されませんでした。');\"",
     "security:audit": "pnpm audit --audit-level=moderate",
-    "test": "pnpm run lint && pnpm run type-check && pnpm run check:forbidden-libs"
+    "test": "pnpm run lint && pnpm run type-check && pnpm run check:forbidden-libs",
+    "doctor": "node scripts/doctor.mjs",
+    "test:changed": "node scripts/test-changed.mjs",
+    "check:architecture": "node scripts/check-architecture-boundaries.mjs",
+    "check:hard-boundaries": "node scripts/check-hard-boundaries.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

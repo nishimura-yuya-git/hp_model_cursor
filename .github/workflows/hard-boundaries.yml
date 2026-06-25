@@ -1,0 +1,19 @@
+name: Hard Boundaries
+
+on:
+  pull_request:
+
+jobs:
+  check-hard-boundaries:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check hard boundaries
+        env:
+          HARD_BOUNDARY_BASE: origin/${{ github.base_ref }}
+          HARD_BOUNDARY_WARN_ONLY: '1'
+        run: npm run check:hard-boundaries

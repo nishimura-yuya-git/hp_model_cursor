@@ -35,6 +35,17 @@ alwaysApply: true
 - ⚠️ 関数 X は a, b, c の 3 箇所から呼ばれている。分岐追加で a の挙動が変わらないことを要検証
 - ⚠️ DB クエリ Q のパフォーマンスに影響する可能性
 
+### 🧾 Evidence Map（業務コア・SSoT・DB・API・権限変更時は必須）
+- Changed surface: 変更する画面・関数・DB・API・設定
+- Entry point: ユーザー操作、API、バッチ、フックなど最初に入る場所
+- Owner boundary: どの領域が責任を持つか（例: 中売り入力 / 精算 / ランキング / 給与明細）
+- Caller: 触る関数・コンポーネントを呼んでいる場所
+- Callee: 触る関数・コンポーネントが呼ぶSSoT・サービス・DB
+- Sibling implementations: 似た計算・表示・同期を持つ兄弟実装
+- Existing tests: 既存の単体・不変条件・E2Eテスト
+- Current shipped behavior: 現在の本番仕様・PROJECT_MEMORY.md上の決定事項
+- Missing evidence: 未確認の証拠。不足がある場合は結論を保留し、確認方法を示す
+
 ### 🗺️ 依存関係マップ（業務コア・SSoT を触る場合は必須）
 
 > 触る関数・コンポーネントが SSoT（`src/utils/salesCalculation.ts` 等）または
