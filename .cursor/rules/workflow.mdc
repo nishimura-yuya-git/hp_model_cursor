@@ -85,6 +85,20 @@ alwaysApply: true
 └── 既存機能修正の場合 → 影響範囲分析 → 適切なフェーズへ
 ```
 
+### 1.5 Agent Loop 判定（必須）
+
+実装・修正・調査に入る前に `.cursor/rules/agent-loops.mdc` を参照し、タスク内容から適切な Agent Loop を選択する。
+
+```text
+通常実装・差分確認 → Main Doctor Loop
+不具合・表示差異 → Bug Fix Loop + Regression Guard Loop
+UI改善・見本画像 → UI Polish Loop + Regression Guard Loop
+SSoT警告・再実装解消 → SSoT Debt Hunter Loop + Regression Guard Loop
+修正後確認 → Regression Guard Loop
+```
+
+選択したLoopの Goal / Evaluation / Stop / 完成判定は、理解レポートと変更契約に明記する。
+
 ### 2. システム要望の場合の必須手順
 
 #### フェーズ1: データベース設計（最優先・必須）

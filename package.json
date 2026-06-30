@@ -17,7 +17,15 @@
     "doctor": "node scripts/doctor.mjs",
     "test:changed": "node scripts/test-changed.mjs",
     "check:architecture": "node scripts/check-architecture-boundaries.mjs",
-    "check:hard-boundaries": "node scripts/check-hard-boundaries.mjs"
+    "check:hard-boundaries": "node scripts/check-hard-boundaries.mjs",
+    "loop:bugfix": "node scripts/loop-runner.mjs --mode=main-safe --goal=bug-fix --with-regression-guard",
+    "loop:context": "node scripts/loop-context.mjs",
+    "loop:discover": "node scripts/loop-discover.mjs",
+    "loop:evaluate": "node scripts/loop-evaluate.mjs",
+    "loop:evaluator": "node scripts/loop-evaluator.mjs",
+    "loop:run": "node scripts/loop-runner.mjs --mode=main-safe --goal=main-doctor",
+    "loop:ssot": "node scripts/loop-runner.mjs --mode=main-safe --goal=ssot-debt --with-regression-guard",
+    "loop:ui": "node scripts/loop-runner.mjs --mode=main-safe --goal=ui-polish --with-regression-guard"
   },
   "dependencies": {
     "react": "^18.3.1",

@@ -1,0 +1,86 @@
+---
+description: ユーザーが明示しなくても、タスク内容から適切なAgent Loopを自動選択してゴールまで遂行する。
+globs:
+alwaysApply: true
+---
+
+# Agent Loop 自動適用ルール
+
+このルールは、`loops/` 配下のLoop定義を任意コマンドではなく、日常開発の実行手順として適用するためのもの。
+
+## 大原則
+
+- ユーザーが「loopして」「UI Polish Loopで」などと明示しなくても、AIがタスク内容から適切なLoopを自動判定する。
+- 作業は「一度コードを書いて終わり」ではなく、Goal / Context / Evaluation / Stop を満たすまで進める。
+- `PROJECT_MEMORY.md`、`.cursor/rules/`、関連コード、差分、検証結果をContextとして扱う。
+- 自動続行できない根拠が出た場合は、曖昧なまま実装せず停止して確認する。
+
+## 自動選択
+
+| ユーザー入力・状況 | 自動適用するLoop | 参照 |
+|---|---|---|
+| 通常の実装・修正・差分確認 | Main Doctor Loop | `loops/goals/main-doctor.md` |
+| お客さんの問題文、表示不具合、動かない、壊れた、期待と違う | Bug Fix Loop + Regression Guard Loop | `loops/goals/bug-fix.md`, `loops/goals/regression-guard.md` |
+| UI改善、デザイン修正、見本画像、スクショ、余白、ボタン、見た目 | UI Polish Loop + Regression Guard Loop | `loops/goals/ui-polish.md` |
+| `check:ssot` の警告、計算再実装、SSoT違反の解消 | SSoT Debt Hunter Loop + Regression Guard Loop | `loops/goals/ssot-debt-hunter.md` |
+| 修正完了後の安全確認、回帰確認、テスト確認 | Regression Guard Loop | `loops/goals/regression-guard.md` |
+
+## 必須実行順序
+
+1. 入力内容からLoopを自動選択する。
+2. `PROJECT_MEMORY.md` と `.cursor/rules/` を読む。
+3. 対象コード・関連実装・呼び出し元・既存テストを読む。
+4. `understanding-first.mdc` の理解レポートに「適用Loop」を明記する。
+5. `change-contract.mdc` の変更契約に、LoopのGoal / Stop / Evaluationを反映する。
+6. 実装する。
+7. 該当LoopのEvaluationを実行する。
+8. 完成条件を満たさない場合は、小さく再修正して再評価する。
+9. Stop条件に当たる場合は、勝手に回避せず人間確認へ回す。
+
+## UI Polish Loop の自動発動
+
+以下のいずれかに当てはまる場合、UI Polish Loop を自動適用する。
+
+- ユーザーが画像、スクショ、見本デザイン、参考サイト、モックを添付している。
+- 「高級感」「余白」「押したくなるボタン」「一発出し」「見た目」「UI」「デザイン」などの意図がある。
+- 既存UIを理想画像に近づける依頼。
+
+この場合、コードを書く前に必ず以下を出す。
+
+- 画像から抽出したレイアウト、余白、色、重心、視線誘導、ボタン、画像位置。
+- ユーザーが何を「良い」と感じているか。
+- 業務UIかHP/LPかの判定。
+- 完成判定 3〜7個。
+
+## 完成の扱い
+
+「実装した」だけでは完成扱いにしない。
+
+完成扱いにできるのは、以下が揃った場合のみ。
+
+- 選択したLoopのGoalを満たしている。
+- Stop条件に該当していない。
+- Evaluationを実行し、失敗がない、または警告の根拠を説明できる。
+- 未確認項目がある場合、その理由と次の確認方法を報告している。
+
+## コマンド
+
+必要に応じて以下を使う。
+
+```bash
+pnpm run loop:run
+pnpm run loop:bugfix
+pnpm run loop:ssot
+pnpm run loop:ui
+pnpm run test:changed
+```
+
+ただし、コマンド実行だけでLoopを完了扱いにしない。出力を読み、次の行動を判断する。
+
+## 禁止
+
+- ユーザーがLoop名を言わなかったことを理由に、Loop判定を省略すること。
+- 画像やスクショがあるのに、画像からの抽出をせず実装へ進むこと。
+- 期待値の根拠がないままテストやUIをAI都合で合わせること。
+- Warningを見ずに「通りました」と報告すること。
+- Stop条件を作業都合で無視すること。

@@ -14,6 +14,13 @@ alwaysApply: true
 ```
 ## 📝 変更契約
 
+### 🔁 適用する Agent Loop
+- Loop: Main Doctor Loop / Bug Fix Loop / Regression Guard Loop / SSoT Debt Hunter Loop / UI Polish Loop
+- Goal: この変更で達成すること
+- Evaluation: 実行する検証コマンド・手動確認
+- Stop: 自動続行を止める条件
+- 完成判定: 完成と言ってよい条件を3〜7個
+
 ### ✅ 触るファイル（ホワイトリスト・これ以外は触らない）
 - path/to/file_a.ts  ← 新規追加
 - path/to/file_b.tsx ← 既存関数 X に分岐を追加
@@ -38,7 +45,7 @@ alwaysApply: true
 ### 🧾 Evidence Map（業務コア・SSoT・DB・API・権限変更時は必須）
 - Changed surface: 変更する画面・関数・DB・API・設定
 - Entry point: ユーザー操作、API、バッチ、フックなど最初に入る場所
-- Owner boundary: どの領域が責任を持つか（例: 中売り入力 / 精算 / ランキング / 給与明細）
+- Owner boundary: どの領域が責任を持つか（例: 予約 / 請求 / 在庫 / 勤怠 / 顧客管理）
 - Caller: 触る関数・コンポーネントを呼んでいる場所
 - Callee: 触る関数・コンポーネントが呼ぶSSoT・サービス・DB
 - Sibling implementations: 似た計算・表示・同期を持つ兄弟実装
@@ -48,8 +55,8 @@ alwaysApply: true
 
 ### 🗺️ 依存関係マップ（業務コア・SSoT を触る場合は必須）
 
-> 触る関数・コンポーネントが SSoT（`src/utils/salesCalculation.ts` 等）または
-> 業務コア（`src/pages/{SalesInput,SalesRecords,Inventory,Settlement,SalesPayrollSummary,MySalary,Rankings}/`）の場合、
+> 触る関数・コンポーネントが SSoT（`src/utils/*Calculation.ts` や `src/lib/*Policy.ts` 等）または
+> 業務コア（案件ごとの `PROJECT_MEMORY.md` や `.cursor/hard-boundaries.json` に記録された領域）の場合、
 > 以下を **Grep して列挙** してから着手する。
 
 **触る関数：** `<関数名>`
@@ -61,24 +68,20 @@ alwaysApply: true
 
 **→ 影響を受けるテスト**
 - `src/utils/xxx.test.ts`
-- `tests/koshien-full-workflow.spec.ts`（該当 STEP を明記）
-- `tests/settlement-cash-protection.spec.ts`
+- `tests/<feature>.spec.ts`（該当 STEP を明記）
+- `tests/invariants/<invariant>.spec.ts`
 - ...
 
 **→ 影響を受ける業務不変条件（`invariants.mdc` 参照）**
-- I-1: 売上計算の数値一致チェーン → 影響あり／なし
-- I-2: manual_fields 保護 → 影響あり／なし
-- I-3: 現金小計保護 → 影響あり／なし
-- I-4: 棚卸し開始前手修正維持 → 影響あり／なし
-- I-5: 中売り→精算自動連携 → 影響あり／なし
-- I-6: ランキング表示優先度 → 影響あり／なし
+- I-x: 金額・数量・ステータス・権限などの不変条件 → 影響あり／なし
+- I-x: 手動修正・確定済みデータ保護 → 影響あり／なし
+- I-x: 外部通知・同期契約 → 影響あり／なし
 
 **→ 影響を受ける業務フロー（人間が読む）**
-- 中売り入力 / 中売り記録 / 棚卸し / 精算 / 売上給与集計 / 給与明細 / ランキング / 出退勤
-  のうち、影響するものを明示
+- 予約 / 注文 / 請求 / 在庫 / 勤怠 / 給与 / 顧客管理 / 通知など、案件に存在する業務フローのうち影響するものを明示
 
 **→ 業務フロー設計図のどの矢印に該当するか（必須・docs/architecture/ 参照）**
-- 例：②中売り記録 → 〆精算（recalcSettlementForShift）
+- 例：② 事実データ → 確定データ（自動再計算）
 - 該当矢印なし（新規フロー）の場合 → 設計図更新提案を別途提示
 
 ### 🧪 検証計画

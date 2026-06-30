@@ -17,6 +17,11 @@ alwaysApply: true
 ```
 ## 🔍 既存機能の理解レポート
 
+### 0. 適用する Agent Loop
+- Main Doctor Loop / Bug Fix Loop / Regression Guard Loop / SSoT Debt Hunter Loop / UI Polish Loop のうち、今回適用するもの
+- 選択理由
+- Goal / Evaluation / Stop の要約
+
 ### 1. 関連ファイル一覧（@で参照したもの）
 - src/xxx/yyy.tsx
 - supabase/migrations/zzz.sql
@@ -41,7 +46,7 @@ alwaysApply: true
 
 ### 7. 業務フロー設計図との整合性（業務コアを触る場合のみ）
 - 参照した図：docs/architecture/<領域名>.mmd（例：業務フロー.mmd / 出退勤フロー.mmd）
-- 該当する矢印：例「②中売り記録 → 〆精算（数量・売上の自動再計算）」
+- 該当する矢印：例「② 事実データ → 確定データ（数量・金額・状態の自動再計算）」
 - この実装が新しい矢印を生む？：はい／いいえ（はいなら設計図更新提案を出す）
 ```
 

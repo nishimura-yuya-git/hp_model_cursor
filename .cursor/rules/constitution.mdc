@@ -1,0 +1,50 @@
+---
+description: AI実行統治の最上位原則を示す薄い索引
+globs:
+alwaysApply: true
+---
+
+# 🏛️ Constitution（AI実行統治の最上位索引）
+
+このファイルは新しい制約を増やすためではなく、既存ルールの優先順位と参照先を明確にするための「憲法層」です。
+具体的な判断は、必ず下記の各SSoTに戻って行う。
+
+## 最上位原則
+
+1. **破壊しない**: 既存関数・DB・RLS・業務コアは、明示承認なしに変更しない。詳細は `safety.mdc`。
+2. **正しさはSSoTに戻す**: 業務ルールは `PROJECT_MEMORY.md`、`invariants.mdc`、`docs/architecture/` を根拠にする。
+3. **計算は一箇所に集約する**: 金額・数量・ステータス・権限などの重要な計算や判定は既存SSoTを再利用し、再実装しない。詳細は `architecture-extension.mdc` / `database.mdc`。
+4. **テスト期待値をAI都合で変えない**: 仕様変更の根拠なしに期待値を緩めない。詳細は `safety.mdc` と `test-integrity-guardrails`。
+5. **書くだけで終わらせない**: ルールは可能な限り invariant / contract / provenance check で検証可能にする。
+6. **Loopで完遂する**: ユーザーが明示しなくてもタスク内容から適切なAgent Loopを自動選択し、Goal / Context / Evaluation / Stop を満たすまで遂行する。詳細は `agent-loops.mdc`。
+
+## 三権分立の対応
+
+| 役割 | 本プロジェクトでのSSoT | 注意 |
+|---|---|---|
+| 立法（何が正しいか） | `PROJECT_MEMORY.md`, `.cursor/rules/*.mdc`, `docs/architecture/*.mmd` | 改正は人間承認のみ。AIは提案まで |
+| 司法（守れているか） | `src/__invariants__`（存在する場合）, `src/contracts`, `scripts/check-invariant-provenance.js` | 立法とテストの接続切れを検知する |
+| 行政（どう実行するか） | `workflow.mdc`, `agent-loops.mdc`, `understanding-first.mdc`, `change-contract.mdc`, skills/tools | 実行前にLoop判定、理解レポート、変更契約を出す |
+
+## 派生データの扱い
+
+AIの要約、影響範囲分析、自動生成された依存図、調査メモは便利な索引だが、判断根拠のSSoTではない。
+判断に使う場合は、必ず上記の立法SSoTへ戻って確認する。
+
+## 情報分類
+
+| 分類 | 該当するもの | 扱い |
+|---|---|---|
+| 判断根拠（Authority / SSoT） | `PROJECT_MEMORY.md`, `.cursor/rules/*.mdc`, `docs/architecture/*.mmd`, `docs/architecture/data-flow-invariants.md`（存在する場合） | 仕様判断・変更契約・テスト期待値の根拠にできる |
+| 承認済みスナップショット | `docs/architecture/*.png`, 承認済みDBマイグレーション, 生成済み `src/types/database.types.ts` | 原典やDB状態と照合しながら判断根拠にできる |
+| 司法・検証 | `src/__invariants__`（存在する場合）, `src/contracts`, `scripts/check-invariant-provenance.js` | 立法SSoTを守れているか判定する。仕様そのものを勝手に変えない |
+| 派生データ | AI要約, 影響範囲分析, 自動生成依存図, 調査メモ, 実行ログ, 集計サマリー | ナビゲーション・索引としてのみ使う。判断根拠にしない |
+
+`docs/architecture/data-flow-invariants.md` が存在する場合、それは承認済みの業務フロー対応表であり、派生データとして扱わない。
+便利だからという理由で、原典と派生データを混ぜて判断してはならない。
+
+## 改正ルール
+
+- この憲法層は薄い索引に留める。
+- 具体ルールの重複記述を増やさない。
+- 変更が必要な場合、AIは追記候補を提示し、人間承認後に反映する。
